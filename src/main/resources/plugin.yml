@@ -1,0 +1,6 @@
+name: deathpro-remake
+version: '${version}'
+
+main: org.firestorm.deathproRemake.DeathproRemake
+api-version: '26.1.2'
+load: POSTWORLD
