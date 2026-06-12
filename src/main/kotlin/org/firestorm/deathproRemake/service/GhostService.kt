@@ -60,7 +60,7 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
         val player = Bukkit.getPlayer(state.playerUuid)!!
 
         // Cancel countdown task
-        Bukkit.getScheduler().cancelTask(state.taskId)
+        scheduler.cancelTask(state.taskId)
         GhostManager.remove(uuid)
 
         if (player.isOp) {
