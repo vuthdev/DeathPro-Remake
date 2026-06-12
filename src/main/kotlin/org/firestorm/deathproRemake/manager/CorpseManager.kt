@@ -1,0 +1,10 @@
+package org.firestorm.deathproRemake.manager
+
+import org.firestorm.deathproRemake.model.CorpseState
+import java.util.UUID
+
+object CorpseManager {
+    private val corpses = mutableMapOf<UUID, CorpseState>()
+
+    fun add(state: CorpseState) { corpses[state.playerUuid] = state}
+}

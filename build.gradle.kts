@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar.Companion.shadowJar
+
 plugins {
     kotlin("jvm") version "2.4.0"
     id("com.gradleup.shadow") version "9.4.2"
@@ -11,6 +13,14 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+
+    compileOnly("com.github.retrooper:packetevents-spigot:2.12.1")
+
+    implementation("org.jetbrains.exposed:exposed-core:1.3.0")
+    runtimeOnly("org.jetbrains.exposed:exposed-jdbc:1.3.0")
+
+    implementation("org.xerial:sqlite-jdbc:3.53.2.0")
+
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.mojang:brigadier:1.0.500")
     implementation(kotlin("reflect"))
@@ -21,8 +31,16 @@ kotlin {
 }
 
 tasks {
+
     build {
         dependsOn(shadowJar)
+    }
+
+    shadowJar {
+        archiveClassifier.set("")
+        relocate("io.github.retrooper.packetevents", "org.firestorm.deathproRemake.libs.packetevents")
+        relocate("org.jetbrains.exposed", "org.firestorm.deathproRemake.libs.exposed")
+        relocate("org.sqlite", "org.firestorm.deathproRemake.libs.sqlite")
     }
 
     runServer {
