@@ -12,5 +12,4 @@ data class CorpseState(
     val skinTexture: String,
     val skinSignature: String,
     val expireAt: Long,
-    val state: CorpseStateEnum = CorpseStateEnum.ACTIVE
 )
