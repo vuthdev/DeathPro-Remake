@@ -1,6 +1,7 @@
 package org.firestorm.deathproRemake.model
 
 import org.bukkit.Location
+import org.firestorm.deathproRemake.common.enums.CorpseStateEnum
 import java.util.UUID
 
 data class CorpseState(
@@ -10,5 +11,6 @@ data class CorpseState(
     val location: Location,
     val skinTexture: String,
     val skinSignature: String,
-    val expireAt: Long
+    val expireAt: Long,
+    val state: CorpseStateEnum = CorpseStateEnum.ACTIVE
 )
