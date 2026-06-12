@@ -118,18 +118,17 @@ class GhostService(
     private fun startCountdown(player: Player, seconds: Int): BukkitTask {
         var remaining = seconds
         return scheduler.runTaskTimer(plugin, Runnable {
-            if (!player.isOnline) {
-                exitGhostMode(player.uniqueId)
-                return@Runnable
+            when {
+                remaining <= 0 -> {
+                    exitGhostMode(player.uniqueId)
+                }
+                else -> {
+                    player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
+                    remaining--
+                }
             }
-            if (remaining <= 0) {
-                exitGhostMode(player.uniqueId)
-                return@Runnable
-            }
-            // Update action bar every tick feels spammy, do every second
-            player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
-            remaining--
-        }, 0L, 20L) // every 20 ticks = 1 second
+
+        }, 0L, 20L)
     }
 
     fun applyEffects(player: Player) {
