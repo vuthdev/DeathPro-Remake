@@ -8,12 +8,12 @@ data class GhostState(
     val playerName: String,
     val deathLocation: Location,
     val respawnLocation: Location,
-    val expiresAt: Long,
+    val expiredAt: Long,
     val taskId: Int = -1,
 ) {
     val remainingSeconds: Long
-        get() = ((expiresAt - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+        get() = ((expiredAt - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
 
     val isExpired: Boolean
-        get() = System.currentTimeMillis() >= expiresAt
+        get() = System.currentTimeMillis() >= expiredAt
 }

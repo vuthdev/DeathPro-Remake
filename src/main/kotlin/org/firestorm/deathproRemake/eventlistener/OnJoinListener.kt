@@ -13,7 +13,7 @@ class OnJoinListener(private val p: DeathproRemake): BaseListener(p) {
         val player = e.player
 
         if (player.isGhost()) {
-
+            p.ghostService.restoreGhostMode(player)
         }
     }
 }

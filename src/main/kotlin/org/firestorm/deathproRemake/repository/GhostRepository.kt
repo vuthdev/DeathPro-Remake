@@ -47,7 +47,7 @@ class GhostRepository(private val plugin: DeathproRemake) {
                 pdc.get(GhostKeys.RESPAWN_Y, PersistentDataType.DOUBLE) ?: 0.0,
                 pdc.get(GhostKeys.RESPAWN_Z, PersistentDataType.DOUBLE) ?: 0.0
             ),
-            expiresAt = expireAt ?: 5
+            expiredAt = expireAt ?: 5
         )
     }
 

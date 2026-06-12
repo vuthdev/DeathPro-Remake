@@ -26,11 +26,12 @@ class GhostService(
 
         applyEffects(player)
 
-        // Teleport to death spot so they can watch from there
         player.teleport(deathLocation.clone().add(0.0, 1.5, 0.0))
 
-        // Start countdown
-        val countdownSeconds = config.ghost.duration  // e.g. 10
+        val now = System.currentTimeMillis()
+        val countdownSeconds = config.ghost.duration
+        val expiredAt = now + (countdownSeconds * 1000L)
+
         val task = startCountdown(player, countdownSeconds)
 
          val ghostState = GhostState(
@@ -39,7 +40,7 @@ class GhostService(
             deathLocation = deathLocation,
             respawnLocation = respawnLoc,
             taskId = task.taskId,
-            expiresAt = 5,
+            expiredAt = expiredAt,
         )
 
         GhostManager.add(ghostState)
@@ -139,7 +140,7 @@ class GhostService(
             isInvisible = true
             foodLevel = 20
             saturation = 20f
-            health = player.health.plus(player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0)       // don't let them die again instantly
+            health = player.health.plus(player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0)
         }
     }
 }
