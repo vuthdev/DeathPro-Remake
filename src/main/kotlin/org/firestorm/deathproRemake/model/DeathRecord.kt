@@ -2,6 +2,7 @@ package org.firestorm.deathproRemake.model
 
 import org.bukkit.Location
 import org.firestorm.deathproRemake.common.enums.DeathCause
+import java.time.Instant
 import java.util.UUID
 
 data class DeathRecord(
@@ -10,5 +11,5 @@ data class DeathRecord(
     val location: Location,
     val cause: DeathCause,
     val killerName: String?,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Instant = Instant.now(),
 )
