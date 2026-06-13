@@ -20,6 +20,7 @@ class GhostRepository(private val plugin: DeathproRemake) {
         pdc.set(GhostKeys.RESPAWN_X, PersistentDataType.DOUBLE, ghostState.respawnLocation.x)
         pdc.set(GhostKeys.RESPAWN_Y, PersistentDataType.DOUBLE, ghostState.respawnLocation.y)
         pdc.set(GhostKeys.RESPAWN_Z, PersistentDataType.DOUBLE, ghostState.respawnLocation.z)
+        pdc.set(GhostKeys.EXPIRE_AT, PersistentDataType.LONG, ghostState.expiredAt)
     }
 
     fun load(player: Player): GhostState {
