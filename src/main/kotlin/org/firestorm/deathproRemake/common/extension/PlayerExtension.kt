@@ -1,8 +1,9 @@
 package org.firestorm.deathproRemake.common.extension
 
 import org.bukkit.entity.Player
-import org.firestorm.deathproRemake.manager.GhostManager
+import org.bukkit.persistence.PersistentDataType
+import org.firestorm.deathproRemake.common.constants.GhostKeys
 
 fun Player.isGhost(): Boolean {
-    return GhostManager.isGhost(this.uniqueId)
+    return this.persistentDataContainer.has(GhostKeys.EXPIRE_AT, PersistentDataType.LONG)
 }

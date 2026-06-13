@@ -1,0 +1,5 @@
+package org.firestorm.deathproRemake.common.constants
+
+object BaseConstants {
+    const val PREFIX = "&a[&cDEATHPRO&a] "
+}
