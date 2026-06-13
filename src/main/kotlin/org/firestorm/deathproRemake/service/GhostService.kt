@@ -6,11 +6,13 @@ import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.attribute.Attribute
+import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
-import org.firestorm.deathproRemake.manager.GhostManager
+import org.firestorm.deathproRemake.common.extension.color
+import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
 import org.firestorm.deathproRemake.repository.GhostRepository
 import java.util.UUID
@@ -20,14 +22,7 @@ class GhostService(
     val ghostRepository: GhostRepository
 ): BaseService(plugin) {
 
-    fun enterGhostMode(player: Player, deathLocation: Location) {
-        val respawnLoc = player.respawnLocation
-            ?: player.world.spawnLocation
-
-        applyEffects(player)
-
-        player.teleport(deathLocation.clone().add(0.0, 1.5, 0.0))
-
+    fun enterGhostMode(player: Player, deathLocation: Location, respawnLocation: Location) {
         val now = System.currentTimeMillis()
         val countdownSeconds = config.ghost.duration
         val expiredAt = now + (countdownSeconds * 1000L)
@@ -38,19 +33,16 @@ class GhostService(
             playerUuid = player.uniqueId,
             playerName = player.name,
             deathLocation = deathLocation,
-            respawnLocation = respawnLoc,
+            respawnLocation = respawnLocation,
             taskId = task.taskId,
             expiredAt = expiredAt,
         )
 
-        GhostManager.add(ghostState)
+        applyGhostEffect(player, true)
+//        player.teleportAsync(deathLocation.clone().add(0.0, 1.5, 0.0))
+
+        GhostTaskManager.add(player.uniqueId, task.taskId)
         ghostRepository.save(player, ghostState)
-
-        val title = Component.text("§cYou died!")
-        val subTitle = Component.text("§7Respawning in §f${countdownSeconds}s §7— press §fSHIFT §7to respawn now")
-
-        val sendTitle = Title.title(title, subTitle, 10, 60, 20)
-        player.showTitle(sendTitle)
     }
 
     fun restoreGhostMode(player: Player) {
@@ -59,18 +51,15 @@ class GhostService(
         when {
             state.isExpired -> {
                 ghostRepository.clear(player)
-                logger.info("Clear ghost state for ${player.name}")
             }
             else -> {
-                applyEffects(player)
+                applyGhostEffect(player, true)
 
-                player.teleport(state.deathLocation)
+                player.teleportAsync(state.deathLocation)
 
                 val remaining = state.remainingSeconds.toInt()
                 val task = startCountdown(player, remaining)
-                GhostManager.update(player.uniqueId, { state ->
-                    state.copy(taskId = task.taskId)
-                })
+                GhostTaskManager.update(player.uniqueId, task.taskId)
 
                 player.showTitle(
                     Title.title(
@@ -79,39 +68,25 @@ class GhostService(
                         10, 60, 20
                     )
                 )
-                logger.info("Restored ghost mode for ${player.name}, ${remaining}s remaining.")
             }
         }
     }
 
     fun exitGhostMode(uuid: UUID) {
-        val state = GhostManager.get(uuid) ?: return
-        val player = Bukkit.getPlayer(state.playerUuid) ?: return
+        val player = Bukkit.getPlayer(uuid) ?: return
+        val ghost = ghostRepository.load(player)
 
         // Cancel countdown task
-        scheduler.cancelTask(state.taskId)
-        GhostManager.remove(uuid)
+        GhostTaskManager.cancel(uuid)
         ghostRepository.clear(player)
 
-        if (player.isOp) {
-            player.apply {
-                allowFlight = true
-                isFlying = false
-                isInvisible = false
-            }
-        } else {
-            player.apply {
-                allowFlight = false
-                isFlying = false
-                isInvisible = false
-            }
-        }
+        applyGhostEffect(player, false)
 
-        player.teleport(state.respawnLocation)
+        player.teleportAsync(ghost.respawnLocation)
         val title = Title.title(
-            Component.text("§aRespawned!"),
-            Component.text(""),
-            5, 20, 10
+            "&aRespawned!".color(),
+            "".color(),
+            0, 20, 10
         )
         player.showTitle(title)
     }
@@ -124,7 +99,13 @@ class GhostService(
                     exitGhostMode(player.uniqueId)
                 }
                 else -> {
-                    player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
+                    val title = Title.title(
+                        "&cYou Died!".color(),
+                        "&aRespawning in &f${remaining}s".color(),
+                        0, 30, 0
+                    )
+                    player.showTitle(title)
+                    // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
                     remaining--
                 }
             }
@@ -132,15 +113,42 @@ class GhostService(
         }, 0L, 20L)
     }
 
-    fun applyEffects(player: Player) {
-        player.apply {
-            gameMode = GameMode.SURVIVAL
-            allowFlight = true
-            isFlying = true
-            isInvisible = true
-            foodLevel = 20
-            saturation = 20f
-            health = player.health.plus(player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0)
+    fun applyGhostEffect(player: Player, isApply: Boolean) {
+        if (isApply) {
+            player.apply {
+                gameMode = GameMode.SURVIVAL
+                allowFlight = true
+                isFlying = true
+                isInvisible = true
+                isInvulnerable = true
+                foodLevel = 20
+                saturation = 20f
+                health = player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+            }
+
+            // clear mob target
+            player.world.getNearbyEntities(player.location, 32.0, 32.0, 32.0)
+                .filterIsInstance<Mob>()
+                .forEach { mob ->
+                    if (mob.target == player) mob.target = null
+                }
+
+        } else {
+            if (player.isOp) {
+                player.apply {
+                    allowFlight = true
+                    isFlying = false
+                    isInvisible = false
+                    isInvulnerable = false
+                }
+            } else {
+                player.apply {
+                    allowFlight = false
+                    isFlying = false
+                    isInvisible = false
+                    isInvulnerable = false
+                }
+            }
         }
     }
 }
