@@ -6,7 +6,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseListener
 import org.firestorm.deathproRemake.common.extension.isGhost
-import org.firestorm.deathproRemake.manager.GhostManager
+import org.firestorm.deathproRemake.manager.GhostTaskManager
 
 class OnQuitListener(
     private val p: DeathproRemake,
@@ -17,9 +17,7 @@ class OnQuitListener(
         val player = e.player
 
         if (player.isGhost()) {
-            val state = GhostManager.get(player.uniqueId) ?: return
-            Bukkit.getScheduler().cancelTask(state.taskId)
-            GhostManager.remove(player.uniqueId)
+            GhostTaskManager.cancel(player.uniqueId)
         }
     }
 }
