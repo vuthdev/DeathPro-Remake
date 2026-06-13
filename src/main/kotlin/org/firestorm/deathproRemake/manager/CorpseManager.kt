@@ -7,4 +7,6 @@ object CorpseManager {
     private val corpses = mutableMapOf<UUID, CorpseState>()
 
     fun add(state: CorpseState) { corpses[state.playerUuid] = state}
+    fun remove(uuid: UUID) = corpses.remove(uuid)
+    fun get(uuid: UUID) = corpses[uuid]
 }
