@@ -1,3 +1,8 @@
 package org.firestorm.deathproRemake.dto
 
-data class PendingData()
+import org.bukkit.Location
+
+data class GhostLocationData(
+    val deadLocation: Location,
+    val respawnLocation: Location,
+)
