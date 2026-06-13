@@ -8,7 +8,7 @@ import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.common.extension.isGhost
 
-class OnPlayerCommand(private val p: DeathproRemake): BaseListener(p) {
+class OnPlayerCommandListener(private val p: DeathproRemake): BaseListener(p) {
     @EventHandler
     fun onPlayerCommand(e: PlayerCommandPreprocessEvent) {
         val player = e.player
