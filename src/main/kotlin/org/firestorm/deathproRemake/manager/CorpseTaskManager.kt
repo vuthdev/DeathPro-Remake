@@ -1,7 +1,6 @@
 package org.firestorm.deathproRemake.manager
 
 import org.bukkit.Bukkit
-import org.firestorm.deathproRemake.model.CorpseState
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -14,6 +13,7 @@ object CorpseTaskManager {
     fun cancel(uuid: UUID) {
         tasks[uuid]?.let {
             Bukkit.getScheduler().cancelTask(it)
+            remove(uuid)
         }
     }
 }

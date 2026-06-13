@@ -6,10 +6,10 @@ import java.time.Instant
 import java.util.UUID
 
 data class DeathRecord(
-    val playerUuid: UUID,
-    val playerName: String,
-    val location: Location,
-    val cause: DeathCause,
-    val killerName: String?,
-    val timestamp: Instant = Instant.now(),
+    var playerUuid: UUID,
+    var playerName: String,
+    var location: Location,
+    var cause: DeathCause,
+    var killerName: String?,
+    var timestamp: Instant = Instant.now(),
 )

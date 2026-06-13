@@ -4,3 +4,11 @@ version: '${version}'
 main: org.firestorm.deathproRemake.DeathproRemake
 api-version: '26.1.2'
 load: POSTWORLD
+
+softdepend:
+  - ProtocolLib
+  - ProtocolSupport
+  - ViaVersion
+  - ViaBackwards
+  - ViaRewind
+  - Geyser-Spigot

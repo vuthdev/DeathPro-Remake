@@ -5,11 +5,11 @@ import org.firestorm.deathproRemake.common.enums.CorpseStateEnum
 import java.util.UUID
 
 data class CorpseState(
-    val entityId: Int,
-    val playerUuid: UUID,
-    val playerName: String,
-    val location: Location,
-    val skinTexture: String,
-    val skinSignature: String,
-    val expireAt: Long,
+    var entityId: Int,
+    var playerUuid: UUID,
+    var playerName: String,
+    var location: Location,
+    var skinTexture: String,
+    var skinSignature: String,
+    var expireAt: Long,
 )
