@@ -1,30 +1,51 @@
 package org.firestorm.deathproRemake.eventlistener
 
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.scheduler.BukkitScheduler
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseListener
-import org.firestorm.deathproRemake.common.extension.isGhost
+import org.firestorm.deathproRemake.common.extension.clogger
+import org.firestorm.deathproRemake.manager.GhostRespawnPending
 
-class DeathEventListener(
+class OnDeathListener(
     private val p: DeathproRemake,
 ): BaseListener(p) {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerDeath(e: PlayerDeathEvent) {
         val player: Player = e.player
+        val location = player.location
+        val deathLocation = location.clone().apply {
+            y = location.y + 1
+        }
 
-        val deathLocation = player.location
+        GhostRespawnPending.startResolving(player.uniqueId)
+        val respawnLocation = getRespawnLocation(player)
+        GhostRespawnPending.stopResolving(player.uniqueId)
+
+        GhostRespawnPending.add(player.uniqueId, deathLocation, respawnLocation)
+
+        player.sendMessage("you dead ${player.name}.")
 
         Bukkit.getScheduler().runTaskLater(plugin, Runnable {
             // force respawn
             player.spigot().respawn()
-            Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-                p.ghostService.enterGhostMode(player, deathLocation)
-            }, 1L)
         }, 1L)
+    }
+
+    fun getRespawnLocation(player: Player): Location {
+        val spawnLocation = player.respawnLocation
+        val isBedSpawn = spawnLocation != null
+        val defaultLoc = spawnLocation ?: player.world.spawnLocation
+
+        val respawnEvent = PlayerRespawnEvent(player, defaultLoc, isBedSpawn, true, true, PlayerRespawnEvent.RespawnReason.DEATH)
+        Bukkit.getPluginManager().callEvent(respawnEvent)
+
+        return respawnEvent.respawnLocation
     }
 }
