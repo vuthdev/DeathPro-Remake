@@ -1,15 +1,16 @@
 package org.firestorm.deathproRemake
 
 import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.PacketEventsAPI
+import com.github.retrooper.packetevents.manager.server.ServerVersion
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import org.bukkit.plugin.java.JavaPlugin
 import org.firestorm.deathproRemake.annotations.handler.CommandRegistry
 import org.firestorm.deathproRemake.commands.DeathProCommand
 import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.constants.GhostKeys
-import org.firestorm.deathproRemake.common.extension.clogger
-import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.config.DeathProConfig
+import org.firestorm.deathproRemake.eventlistener.CheckIndexListener
 import org.firestorm.deathproRemake.eventlistener.OnDeathListener
 import org.firestorm.deathproRemake.eventlistener.OnGhostStateListener
 import org.firestorm.deathproRemake.eventlistener.OnJoinListener
@@ -19,6 +20,7 @@ import org.firestorm.deathproRemake.eventlistener.OnQuitListener
 import org.firestorm.deathproRemake.eventlistener.OnRespawnListener
 import org.firestorm.deathproRemake.eventlistener.SpawnMessageSuppressor
 import org.firestorm.deathproRemake.repository.GhostRepository
+import org.firestorm.deathproRemake.service.CorpseService
 import org.firestorm.deathproRemake.service.GhostService
 
 class DeathproRemake : JavaPlugin() {
@@ -33,6 +35,10 @@ class DeathproRemake : JavaPlugin() {
         private set
     lateinit var ghostRepository: GhostRepository
         private set
+    lateinit var packetApi: PacketEventsAPI<*>
+        private set
+    lateinit var corpseService: CorpseService
+        private set
 
     override fun onLoad() {
         PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
@@ -45,15 +51,16 @@ class DeathproRemake : JavaPlugin() {
         instance = this
 
         PacketEvents.getAPI().init();
+        packetApi = PacketEvents.getAPI()
 
         loadConfig()
-
-        CommandRegistry.scan(this, DeathProCommand())
-        GhostKeys.init(this)
 
         registerListener()
         registerRepository()
         registerService()
+
+        CommandRegistry.scan(this, DeathProCommand(corpseService))
+        GhostKeys.init(this)
 
         logger.info("${BaseConstants.PREFIX} &aplugin started")
     }
@@ -80,10 +87,12 @@ class DeathproRemake : JavaPlugin() {
 
     fun registerPacketListener() {
         SpawnMessageSuppressor().register()
+//        CheckIndexListener().register()
     }
 
     fun registerService() {
         ghostService = GhostService(this, ghostRepository)
+        corpseService = CorpseService(this)
     }
 
     fun registerRepository() {

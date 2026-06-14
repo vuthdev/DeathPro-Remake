@@ -14,6 +14,7 @@ class OnPostRespawnListener(private val p: DeathproRemake) : BaseListener(p) {
         val data = GhostPostRespawnPending.get(player.uniqueId) ?: return
         GhostPostRespawnPending.remove(player.uniqueId)
 
+        p.corpseService.spawnCorpse(player)
         p.ghostService.enterGhostMode(player, data.deadLocation, data.respawnLocation)
     }
 }

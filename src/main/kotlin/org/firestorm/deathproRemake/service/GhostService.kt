@@ -11,10 +11,12 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
+import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
 import org.firestorm.deathproRemake.repository.GhostRepository
+import java.time.Duration
 import java.util.UUID
 
 class GhostService(
@@ -51,6 +53,9 @@ class GhostService(
         when {
             state.isExpired -> {
                 ghostRepository.clear(player)
+                applyGhostEffect(player, false)
+                player.teleportAsync(state.respawnLocation)
+                player.sendMessage("${BaseConstants.PREFIX} &aYour ghost timer expired while offline. You have respawned.".color())
             }
             else -> {
                 applyGhostEffect(player, true)
@@ -65,7 +70,11 @@ class GhostService(
                     Title.title(
                         Component.text("§cStill dead!"),
                         Component.text("§7Respawning in §f${remaining}s"),
-                        10, 60, 20
+                        Title.Times.times(
+                            Duration.ofSeconds(2),
+                            Duration.ofSeconds(5),
+                            Duration.ofSeconds(2)
+                        )
                     )
                 )
             }
@@ -86,7 +95,11 @@ class GhostService(
         val title = Title.title(
             "&aRespawned!".color(),
             "".color(),
-            0, 20, 10
+            Title.Times.times(
+                Duration.ofSeconds(0),
+                Duration.ofSeconds(5),
+                Duration.ofSeconds(2)
+            )
         )
         player.showTitle(title)
     }
@@ -102,7 +115,11 @@ class GhostService(
                     val title = Title.title(
                         "&cYou Died!".color(),
                         "&aRespawning in &f${remaining}s".color(),
-                        0, 30, 0
+                        Title.Times.times(
+                            Duration.ofSeconds(0),
+                            Duration.ofSeconds(3),
+                            Duration.ofSeconds(0)
+                        )
                     )
                     player.showTitle(title)
                     // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
@@ -123,7 +140,7 @@ class GhostService(
                 isInvulnerable = true
                 foodLevel = 20
                 saturation = 20f
-                health = player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+                health = player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.value ?: 20.0
             }
 
             // clear mob target

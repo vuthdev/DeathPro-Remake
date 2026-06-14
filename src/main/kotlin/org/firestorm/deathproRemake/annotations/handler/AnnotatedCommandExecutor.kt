@@ -24,11 +24,24 @@ class AnnotatedCommandExecutor(
 
     fun dispatch(sender: CommandSender, args: Array<String>): Boolean {
         val subName = args.getOrNull(0)?.lowercase()
-        val fn = subName?.let { subCommands[it] }
-            ?: subCommands[""] // fallback: root handler if annotated with name=""
+        val fn = when {
+            // no args → use default handler
+            subName == null -> subCommands[""]
+
+            // known subcommand → use it
+            subCommands.containsKey(subName) -> subCommands[subName]
+
+            // unknown subcommand AND default exists → use default
+            subCommands.containsKey("") -> subCommands[""]
+
+            // unknown subcommand, no default → show usage
+            else -> null
+        }
 
         if (fn == null) {
-            sender.sendMessage("§cUsage: /${meta.name} <${subCommands.keys.joinToString("|")}>")
+            sender.sendMessage("§cUsage: /${meta.name} <${
+                subCommands.keys.filter { it.isNotEmpty() }.joinToString("|")
+            }>")
             return true
         }
 
