@@ -141,6 +141,7 @@ class GhostService(
                 foodLevel = 20
                 saturation = 20f
                 health = player.getAttribute(Attribute.GENERIC_MAX_HEALTH)?.value ?: 20.0
+                isSilent = true
             }
 
             // clear mob target
@@ -157,6 +158,7 @@ class GhostService(
                     isFlying = false
                     isInvisible = false
                     isInvulnerable = false
+                    isSilent = false
                 }
             } else {
                 player.apply {
@@ -164,6 +166,7 @@ class GhostService(
                     isFlying = false
                     isInvisible = false
                     isInvulnerable = false
+                    isSilent = false
                 }
             }
         }
