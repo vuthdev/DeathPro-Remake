@@ -10,6 +10,7 @@ object CorpseTaskManager {
     fun add(uuid: UUID, taskId: Int) { tasks[uuid] = taskId}
     fun remove(uuid: UUID) = tasks.remove(uuid)
     fun get(uuid: UUID) = tasks[uuid]
+    fun update(uuid: UUID, taskId: Int) { tasks[uuid] = taskId }
     fun cancel(uuid: UUID) {
         tasks[uuid]?.let {
             Bukkit.getScheduler().cancelTask(it)

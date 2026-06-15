@@ -1,4 +1,4 @@
-package org.firestorm.deathproRemake.dto
+package org.firestorm.deathproRemake.model
 
 import org.bukkit.Location
 

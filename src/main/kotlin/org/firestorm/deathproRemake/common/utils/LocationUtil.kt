@@ -32,4 +32,19 @@ object LocationUtil {
                 && type != Material.FIRE
                 && type != Material.SOUL_FIRE
     }
+
+    fun calculateGroundLocation(initialLoc: Location): Location {
+        val world = initialLoc.world ?: return initialLoc
+
+        val highestBlock = world.getHighestBlockAt(initialLoc.blockX, initialLoc.blockZ)
+
+        val groundLoc = highestBlock.location.apply {
+            yaw = initialLoc.yaw
+            pitch = initialLoc.pitch
+        }
+
+        groundLoc.y = highestBlock.y + 1.25
+
+        return groundLoc
+    }
 }

@@ -1,11 +1,12 @@
 package org.firestorm.deathproRemake.common.utils
 
 import java.security.SecureRandom
+import java.util.concurrent.atomic.AtomicInteger
 
 object IDGeneratorUtil {
-    private val random = SecureRandom()
+    private val currentId = AtomicInteger(-1000)
 
     fun generateId(): Int {
-        return random.nextInt(900_000_000) + 100_000_000
+        return currentId.getAndDecrement()
     }
 }

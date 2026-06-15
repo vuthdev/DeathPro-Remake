@@ -1,6 +1,6 @@
 package org.firestorm.deathproRemake.manager
 
-import org.firestorm.deathproRemake.dto.GhostLocationData
+import org.firestorm.deathproRemake.model.GhostLocationData
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 

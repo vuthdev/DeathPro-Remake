@@ -32,6 +32,8 @@ class OnDeathListener(
 
         GhostRespawnPending.add(player.uniqueId, deathLocation, respawnLocation)
 
+        p.corpseService.spawnCorpse(player)
+
         Bukkit.getScheduler().runTaskLater(plugin, Runnable {
             // force respawn
             player.spigot().respawn()

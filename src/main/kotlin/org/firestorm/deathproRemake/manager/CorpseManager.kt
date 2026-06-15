@@ -1,14 +1,14 @@
 package org.firestorm.deathproRemake.manager
 
 import com.github.retrooper.packetevents.protocol.player.UserProfile
+import org.firestorm.deathproRemake.model.CorpseState
 import java.util.UUID
 
 object CorpseManager {
-    val corpses = mutableMapOf<UUID, UserProfile>()
+    val corpses = mutableMapOf<UUID, CorpseState>()
 
-    fun addCorpse(uuid: UUID, userProfile: UserProfile) {
-        corpses[uuid] = userProfile
-    }
-    fun getCorpse(uuid: UUID) = corpses[uuid]
-    fun removeCorpse(uuid: UUID) = corpses.remove(uuid)
+    fun add(uuid: UUID, corpse: CorpseState) { corpses[uuid] = corpse }
+    fun update(uuid: UUID, corpse: CorpseState) { corpses[uuid] = corpse }
+    fun get(uuid: UUID) = corpses[uuid]
+    fun remove(uuid: UUID) = corpses.remove(uuid)
 }

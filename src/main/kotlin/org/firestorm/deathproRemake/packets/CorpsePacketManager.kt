@@ -9,7 +9,6 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes
 import com.github.retrooper.packetevents.protocol.player.Equipment
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot
 import com.github.retrooper.packetevents.protocol.player.GameMode
-import com.github.retrooper.packetevents.protocol.player.TextureProperty
 import com.github.retrooper.packetevents.protocol.player.UserProfile
 import com.github.retrooper.packetevents.wrapper.PacketWrapper
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities
@@ -27,13 +26,13 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.firestorm.deathproRemake.manager.CorpseManager
+import org.firestorm.deathproRemake.manager.UserProfileManager
 
 object CorpsePacketManager {
     private val serverVersion = PacketEvents.getAPI().serverManager.version
 
     fun createPlayerInfo(player: Player, userProfile: UserProfile): PacketWrapper<*> {
-        CorpseManager.addCorpse(player.uniqueId, userProfile)
+        UserProfileManager.add(player.uniqueId, userProfile)
 
         val addPacket = if (serverVersion.isNewerThanOrEquals(ServerVersion.V_1_19_3)) {
             WrapperPlayServerPlayerInfoUpdate(
@@ -50,26 +49,14 @@ object CorpsePacketManager {
         return addPacket
     }
 
-    fun createSpawnPacket(player: Player, userProfile: UserProfile, entityId: Int): PacketWrapper<*> {
-        val groundLocation = calculateGroundLocation(player.location)
-        val location = SpigotConversionUtil.fromBukkitLocation(groundLocation)
-        val corpseUUID = CorpseManager.getCorpse(player.uniqueId)
-
-        val user = PacketEvents.getAPI().playerManager.getUser(player)
-        if (user != null && user.profile != null) {
-            user.profile.textureProperties.forEach {
-                if(it.name == "textures") {
-                    userProfile.textureProperties.add(
-                        TextureProperty("textures", it.value, it.signature)
-                    )
-                }
-            }
-        }
+    fun createSpawnPacket(player: Player, entityId: Int, location: Location): PacketWrapper<*> {
+        val location = SpigotConversionUtil.fromBukkitLocation(location)
+        val profileUUID = UserProfileManager.get(player.uniqueId)
 
         val packet = if (serverVersion.isNewerThanOrEquals(ServerVersion.V_1_20_2)) {
-            WrapperPlayServerSpawnEntity(entityId, corpseUUID?.uuid, EntityTypes.PLAYER, location, location.yaw, 0, null)
+            WrapperPlayServerSpawnEntity(entityId, profileUUID?.uuid, EntityTypes.PLAYER, location, location.yaw, 0, null)
         } else {
-            WrapperPlayServerSpawnPlayer(entityId, corpseUUID?.uuid, location)
+            WrapperPlayServerSpawnPlayer(entityId, profileUUID?.uuid, location)
         }
 
         return packet
@@ -96,7 +83,7 @@ object CorpsePacketManager {
         val equipmentList = mutableListOf<Equipment>()
 
         val addSlot = { slot: EquipmentSlot, item: ItemStack? ->
-            item?.takeIf { !it.type.isAir }?.let {
+            item?.takeIf { !it.type.isAir }.let {
                 val packetItem = SpigotConversionUtil.fromBukkitItemStack(item)
                 equipmentList.add(Equipment(slot, packetItem))
             }
@@ -138,8 +125,8 @@ object CorpsePacketManager {
     }
 
     fun removePlayerInfo(player: Player, userProfile: UserProfile): PacketWrapper<*> {
-        val corpseInfo = CorpseManager.getCorpse(player.uniqueId)
-        val playerInfo = WrapperPlayServerPlayerInfoRemove(corpseInfo?.uuid)
+        val profile = UserProfileManager.get(player.uniqueId)
+        val playerInfo = WrapperPlayServerPlayerInfoRemove(profile?.uuid)
 
         return playerInfo
     }
@@ -154,21 +141,6 @@ object CorpsePacketManager {
      ====== PRIVATE FUNCTION ======
      ==============================
      */
-
-    private fun calculateGroundLocation(initialLoc: Location): Location {
-        val world = initialLoc.world ?: return initialLoc
-
-        val highestBlock = world.getHighestBlockAt(initialLoc.blockX, initialLoc.blockZ)
-
-        val groundLoc = highestBlock.location.apply {
-            yaw = initialLoc.yaw
-            pitch = initialLoc.pitch
-        }
-
-        groundLoc.y = highestBlock.y + 1.25
-
-        return groundLoc
-    }
 
     private fun getModernPlayerInfoData(userProfile: UserProfile): WrapperPlayServerPlayerInfoUpdate.PlayerInfo {
         return WrapperPlayServerPlayerInfoUpdate.PlayerInfo(

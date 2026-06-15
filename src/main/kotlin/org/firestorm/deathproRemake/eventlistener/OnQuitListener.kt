@@ -16,8 +16,7 @@ class OnQuitListener(
     fun onQuit(e: PlayerQuitEvent) {
         val player = e.player
 
-        if (player.isGhost()) {
-            GhostTaskManager.cancel(player.uniqueId)
-        }
+        if (!player.isGhost()) return
+        GhostTaskManager.cancel(player.uniqueId)
     }
 }
