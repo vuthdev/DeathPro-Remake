@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 
     implementation("org.jetbrains.exposed:exposed-core:1.3.0")
     runtimeOnly("org.jetbrains.exposed:exposed-jdbc:1.3.0")
@@ -29,6 +29,14 @@ kotlin {
 }
 
 tasks {
+    shadowJar {
+        archiveClassifier.set("")
+        relocate("com.github.retrooper", "org.firestorm.deathproRemake.libs.packetevents")
+        relocate("io.github.retrooper",  "org.firestorm.deathproRemake.libs.packetevents")
+        relocate("org.jetbrains.exposed","org.firestorm.deathproRemake.libs.exposed")
+        relocate("org.sqlite",           "org.firestorm.deathproRemake.libs.sqlite")
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 
     build {
         dependsOn(shadowJar)
