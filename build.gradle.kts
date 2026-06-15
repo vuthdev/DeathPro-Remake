@@ -9,11 +9,13 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.codemc.io/repository/maven-releases/")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 
+    implementation("com.github.retrooper:packetevents-spigot:2.12.2")
     implementation("org.jetbrains.exposed:exposed-core:1.3.0")
     runtimeOnly("org.jetbrains.exposed:exposed-jdbc:1.3.0")
 

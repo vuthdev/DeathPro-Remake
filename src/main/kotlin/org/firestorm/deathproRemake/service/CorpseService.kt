@@ -27,11 +27,15 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             playerManager.sendPacket(onlinePlayers, createPlayerInfo)
             playerManager.sendPacket(onlinePlayers, spawnEntity)
             playerManager.sendPacket(onlinePlayers, createEntityMetadata)
-            playerManager.sendPacket(onlinePlayers, hideNPCName)
-            playerManager.sendPacket(onlinePlayers, applyEquipment)
+
+            // only send packet if it not null
+            applyEquipment?.let {
+                playerManager.sendPacket(onlinePlayers, applyEquipment)
+            }
 
             scheduler.runTaskLater(plugin, Runnable {
                 playerManager.sendPacket(onlinePlayers, removePlayerInfo)
+                playerManager.sendPacket(onlinePlayers, hideNPCName)
             }, 20L)
 
             startDestroyEntity(onlinePlayers, destroyEntity)

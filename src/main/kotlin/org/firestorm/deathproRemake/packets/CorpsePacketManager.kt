@@ -91,12 +91,12 @@ object CorpsePacketManager {
         return metadata
     }
 
-    fun createEntityEquipment(player: Player, entityId: Int): PacketWrapper<*> {
+    fun createEntityEquipment(player: Player, entityId: Int): PacketWrapper<*>? {
         val inventory = player.inventory
         val equipmentList = mutableListOf<Equipment>()
 
         val addSlot = { slot: EquipmentSlot, item: ItemStack? ->
-            if (item != null && !item.type.isAir) {
+            item?.takeIf { !it.type.isAir }?.let {
                 val packetItem = SpigotConversionUtil.fromBukkitItemStack(item)
                 equipmentList.add(Equipment(slot, packetItem))
             }
@@ -109,8 +109,7 @@ object CorpsePacketManager {
         addSlot(EquipmentSlot.LEGGINGS, inventory.leggings)
         addSlot(EquipmentSlot.BOOTS, inventory.boots)
 
-        if (equipmentList.isEmpty()) return WrapperPlayServerEntityEquipment(entityId, emptyList())
-
+        if (equipmentList.isEmpty()) return null
         return WrapperPlayServerEntityEquipment(entityId, equipmentList)
     }
 

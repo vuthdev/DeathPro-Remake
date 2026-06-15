@@ -1,0 +1,14 @@
+name: deathpro-remake
+version: '1.0-SNAPSHOT'
+
+main: org.firestorm.deathproRemake.DeathproRemake
+api-version: '1.21'
+load: POSTWORLD
+
+softdepend:
+  - ProtocolLib
+  - ProtocolSupport
+  - ViaVersion
+  - ViaBackwards
+  - ViaRewind
+  - Geyser-Spigot
