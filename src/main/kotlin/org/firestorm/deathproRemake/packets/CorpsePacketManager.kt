@@ -79,7 +79,7 @@ object CorpsePacketManager {
         val sleepingPost = EntityPose.SLEEPING
         val allLayersBitmask = 127.toByte()
 
-        val skinIndex = if(serverVersion.isNewerThanOrEquals(ServerVersion.V_26_1)) 16 else 17
+        val skinIndex = if(serverVersion.isNewerThanOrEquals(ServerVersion.V_1_21_9)) 16 else 17
 
         val metaDataItems = listOf<EntityData<*>>(
             EntityData(0, EntityDataTypes.BYTE, 0.toByte()),

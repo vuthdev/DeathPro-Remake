@@ -32,8 +32,6 @@ class OnDeathListener(
 
         GhostRespawnPending.add(player.uniqueId, deathLocation, respawnLocation)
 
-        player.sendMessage("you dead ${player.name}.")
-
         Bukkit.getScheduler().runTaskLater(plugin, Runnable {
             // force respawn
             player.spigot().respawn()
