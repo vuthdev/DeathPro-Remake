@@ -104,6 +104,12 @@ class GhostService(
         player.showTitle(title)
     }
 
+    /*
+     ==============================
+     ====== PRIVATE FUNCTION ======
+     ==============================
+     */
+
     private fun startCountdown(player: Player, seconds: Int): BukkitTask {
         var remaining = seconds
         return scheduler.runTaskTimer(plugin, Runnable {
@@ -130,7 +136,7 @@ class GhostService(
         }, 0L, 20L)
     }
 
-    fun applyGhostEffect(player: Player, isApply: Boolean) {
+    private fun applyGhostEffect(player: Player, isApply: Boolean) {
         if (isApply) {
             player.apply {
                 gameMode = GameMode.SURVIVAL
