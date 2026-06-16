@@ -7,7 +7,6 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes
 import com.github.retrooper.packetevents.protocol.entity.pose.EntityPose
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes
 import com.github.retrooper.packetevents.protocol.player.Equipment
-import com.github.retrooper.packetevents.protocol.player.EquipmentSlot
 import com.github.retrooper.packetevents.protocol.player.GameMode
 import com.github.retrooper.packetevents.protocol.player.UserProfile
 import com.github.retrooper.packetevents.wrapper.PacketWrapper
@@ -24,16 +23,11 @@ import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Location
-import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
-import org.firestorm.deathproRemake.manager.UserProfileManager
 
 object CorpsePacketManager {
     private val serverVersion = PacketEvents.getAPI().serverManager.version
 
-    fun createPlayerInfo(player: Player, userProfile: UserProfile): PacketWrapper<*> {
-        UserProfileManager.add(player.uniqueId, userProfile)
-
+    fun createPlayerInfo(userProfile: UserProfile): PacketWrapper<*> {
         val addPacket = if (serverVersion.isNewerThanOrEquals(ServerVersion.V_1_19_3)) {
             WrapperPlayServerPlayerInfoUpdate(
                 WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
@@ -49,14 +43,13 @@ object CorpsePacketManager {
         return addPacket
     }
 
-    fun createSpawnPacket(player: Player, entityId: Int, location: Location): PacketWrapper<*> {
+    fun createSpawnPacket(userProfile: UserProfile, entityId: Int, location: Location): PacketWrapper<*> {
         val location = SpigotConversionUtil.fromBukkitLocation(location)
-        val profileUUID = UserProfileManager.get(player.uniqueId)
 
         val packet = if (serverVersion.isNewerThanOrEquals(ServerVersion.V_1_20_2)) {
-            WrapperPlayServerSpawnEntity(entityId, profileUUID?.uuid, EntityTypes.PLAYER, location, location.yaw, 0, null)
+            WrapperPlayServerSpawnEntity(entityId, userProfile.uuid, EntityTypes.PLAYER, location, location.yaw, 0, null)
         } else {
-            WrapperPlayServerSpawnPlayer(entityId, profileUUID?.uuid, location)
+            WrapperPlayServerSpawnPlayer(entityId, userProfile.uuid, location)
         }
 
         return packet
@@ -78,24 +71,7 @@ object CorpsePacketManager {
         return metadata
     }
 
-    fun createEntityEquipment(player: Player, entityId: Int): PacketWrapper<*>? {
-        val inventory = player.inventory
-        val equipmentList = mutableListOf<Equipment>()
-
-        val addSlot = { slot: EquipmentSlot, item: ItemStack? ->
-            item?.takeIf { !it.type.isAir }.let {
-                val packetItem = SpigotConversionUtil.fromBukkitItemStack(item)
-                equipmentList.add(Equipment(slot, packetItem))
-            }
-        }
-
-        addSlot(EquipmentSlot.MAIN_HAND, inventory.itemInMainHand)
-        addSlot(EquipmentSlot.OFF_HAND, inventory.itemInOffHand)
-        addSlot(EquipmentSlot.HELMET, inventory.helmet)
-        addSlot(EquipmentSlot.CHEST_PLATE, inventory.chestplate)
-        addSlot(EquipmentSlot.LEGGINGS, inventory.leggings)
-        addSlot(EquipmentSlot.BOOTS, inventory.boots)
-
+    fun createEntityEquipment(equipmentList: List<Equipment>, entityId: Int): PacketWrapper<*>? {
         if (equipmentList.isEmpty()) return null
         return WrapperPlayServerEntityEquipment(entityId, equipmentList)
     }
@@ -124,9 +100,12 @@ object CorpsePacketManager {
         return createTeamPacket
     }
 
-    fun removePlayerInfo(player: Player, userProfile: UserProfile): PacketWrapper<*> {
-        val profile = UserProfileManager.get(player.uniqueId)
-        val playerInfo = WrapperPlayServerPlayerInfoRemove(profile?.uuid)
+    fun removePlayerInfo(userProfile: UserProfile): PacketWrapper<*> {
+        val playerInfo = if (serverVersion.isNewerThanOrEquals(ServerVersion.V_1_19_3)) {
+            WrapperPlayServerPlayerInfoRemove(userProfile.uuid)
+        } else {
+            WrapperPlayServerPlayerInfo(WrapperPlayServerPlayerInfo.Action.REMOVE_PLAYER, getLegacyPlayerInfoData(userProfile))
+        }
 
         return playerInfo
     }
