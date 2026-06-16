@@ -38,7 +38,7 @@ tasks {
         relocate("com.github.retrooper", "org.firestorm.deathproRemake.libs.packetevents")
         relocate("io.github.retrooper",  "org.firestorm.deathproRemake.libs.packetevents")
         relocate("org.jetbrains.exposed.v1","org.firestorm.deathproRemake.libs.exposed")
-        relocate("org.sqlite",           "org.firestorm.deathproRemake.libs.sqlite")
+        mergeServiceFiles()
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 

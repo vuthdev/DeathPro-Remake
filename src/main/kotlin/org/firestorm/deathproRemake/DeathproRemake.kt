@@ -9,6 +9,8 @@ import org.firestorm.deathproRemake.annotations.handler.CommandRegistry
 import org.firestorm.deathproRemake.commands.DeathProCommand
 import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.constants.GhostKeys
+import org.firestorm.deathproRemake.common.extension.clogger
+import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.config.DeathProConfig
 import org.firestorm.deathproRemake.eventlistener.CheckIndexListener
 import org.firestorm.deathproRemake.eventlistener.OnDeathListener
@@ -68,11 +70,11 @@ class DeathproRemake : JavaPlugin() {
         CommandRegistry.scan(this, DeathProCommand(corpseService))
         GhostKeys.init(this)
 
-        logger.info("${BaseConstants.PREFIX} &aplugin started")
+        clogger.info("${BaseConstants.PREFIX} &aplugin started".color())
     }
 
     override fun onDisable() {
-        logger.info("${BaseConstants.PREFIX} &cplugin stopped")
+        clogger.info("${BaseConstants.PREFIX} &cplugin stopped".color())
 
         // clear corpse task
         CorpseTaskManager.cancelAll()
