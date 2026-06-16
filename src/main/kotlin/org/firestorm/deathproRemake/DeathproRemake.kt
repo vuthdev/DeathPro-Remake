@@ -54,6 +54,7 @@ class DeathproRemake : JavaPlugin() {
 
     override fun onEnable() {
         instance = this
+        saveDefaultConfig()
 
         PacketEvents.getAPI().init();
         packetApi = PacketEvents.getAPI()
@@ -70,11 +71,11 @@ class DeathproRemake : JavaPlugin() {
         CommandRegistry.scan(this, DeathProCommand(this, corpseService))
         GhostKeys.init(this)
 
-        clogger.info("${BaseConstants.PREFIX} &aplugin started".color())
+        clogger.info("&aplugin started".color())
     }
 
     override fun onDisable() {
-        clogger.info("${BaseConstants.PREFIX} &cplugin stopped".color())
+        clogger.info("&cplugin stopped".color())
 
         // clear corpse task
         CorpseTaskManager.cancelAll()

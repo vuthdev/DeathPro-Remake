@@ -11,8 +11,8 @@ object CorpseTable : Table("corpses") {
     val x = double("x")
     val y = double("y")
     val z = double("z")
-    val skinTexture = varchar("skin_texture", 100)
-    val skinSignature = varchar("skin_signature", 100).nullable()
+    val skinTexture = text("skin_texture")
+    val skinSignature = text("skin_signature").nullable()
     val expiredAt = long("expired_at")
     val spawnedAt = long("spawnedAt")
 

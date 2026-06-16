@@ -19,8 +19,6 @@ class OnDeathListener(
     fun onPlayerDeath(e: PlayerDeathEvent) {
         val player: Player = e.player
 
-        e.deathMessage(null)
-
         val location = player.location
         val deathLocation = location.clone().apply {
             y = location.y + 1

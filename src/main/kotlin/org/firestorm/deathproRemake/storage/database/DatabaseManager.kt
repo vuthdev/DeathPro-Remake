@@ -33,6 +33,5 @@ class DatabaseManager(private val plugin: DeathproRemake) {
                 // add more tables here later
             )
         }
-
     }
 }

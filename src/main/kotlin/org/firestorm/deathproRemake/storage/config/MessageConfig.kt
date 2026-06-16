@@ -49,5 +49,5 @@ class MessageConfig(private val plugin: DeathproRemake) {
 
     // raw string prefix (needed for concatenation before colorizing)
     fun rawPrefix(): String =
-        raw(MessageConstants.PREFIX, "&f[&c&lDEATHPRO&f]")
+        raw(MessageConstants.PREFIX, "&f[&c&lDEATHPRO&f] ")
 }

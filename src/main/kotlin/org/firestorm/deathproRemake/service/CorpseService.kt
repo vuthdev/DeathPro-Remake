@@ -10,6 +10,7 @@ import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
 import org.firestorm.deathproRemake.common.constants.DefaultSkins
+import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.fromPlayerEquipment
 import org.firestorm.deathproRemake.common.utils.IDGeneratorUtil
 import org.firestorm.deathproRemake.common.utils.LocationUtil
@@ -81,6 +82,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
 
     fun restoreCorpse() {
         val state = CorpseRepository.loadActive()
+        clogger.info(state.toString())
 
         state.forEach { corpse ->
             when {

@@ -12,12 +12,14 @@ import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
 import org.firestorm.deathproRemake.common.constants.BaseConstants
+import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
 import org.firestorm.deathproRemake.repository.GhostRepository
 import java.time.Duration
 import java.util.UUID
+import kotlin.time.Duration.Companion.seconds
 
 class GhostService(
     override val plugin: DeathproRemake,
@@ -65,10 +67,13 @@ class GhostService(
                 val task = startCountdown(player, remaining)
                 GhostTaskManager.update(player.uniqueId, task.taskId)
 
+                val title = messageConfig.ghostTitle
+                val subTitle = messageConfig.ghostSubtitle(remaining)
+
                 player.showTitle(
                     Title.title(
-                        messageConfig.ghostTitle,
-                        messageConfig.ghostSubtitle(remaining),
+                        title,
+                        subTitle,
                         Title.Times.times(
                             Duration.ofSeconds(2),
                             Duration.ofSeconds(5),
@@ -119,7 +124,7 @@ class GhostService(
                 else -> {
                     val title = Title.title(
                         messageConfig.ghostTitle,
-                        messageConfig.ghostSubtitle,
+                        messageConfig.ghostSubtitle(remaining),
                         Title.Times.times(
                             Duration.ofSeconds(0),
                             Duration.ofSeconds(3),
