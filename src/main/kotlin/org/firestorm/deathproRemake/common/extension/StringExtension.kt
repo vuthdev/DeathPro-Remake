@@ -13,3 +13,19 @@ fun String.color(): Component {
         MiniMessage.miniMessage().deserialize(this)
     }
 }
+
+fun String.format(vararg placeholders: Pair<String, Any>): String {
+    var result = this
+    placeholders.forEach { (key, value) ->
+        result = result.replace("{$key}", value.toString())
+    }
+    return result
+}
+
+fun String.formatColor(vararg placeholders: Pair<String, Any>): Component =
+    this.format(*placeholders).color()
+
+fun String.stripColor(): String =
+    LegacyComponentSerializer.legacyAmpersand()
+        .deserialize(this)
+        .let { net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(it) }
