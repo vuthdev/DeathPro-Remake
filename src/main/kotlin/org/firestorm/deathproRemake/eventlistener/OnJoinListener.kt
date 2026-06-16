@@ -1,5 +1,6 @@
 package org.firestorm.deathproRemake.eventlistener
 
+import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerJoinEvent
 import org.firestorm.deathproRemake.DeathproRemake
@@ -14,6 +15,7 @@ class OnJoinListener(private val p: DeathproRemake): BaseListener(p) {
 
         if (!player.isGhost()) return
 
+        p.corpseService.restoreCorpse()
         p.ghostService.restoreGhostMode(player)
     }
 }
