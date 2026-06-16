@@ -19,9 +19,12 @@ import org.firestorm.deathproRemake.eventlistener.OnPostRespawnListener
 import org.firestorm.deathproRemake.eventlistener.OnQuitListener
 import org.firestorm.deathproRemake.eventlistener.OnRespawnListener
 import org.firestorm.deathproRemake.eventlistener.SpawnMessageSuppressor
+import org.firestorm.deathproRemake.manager.CorpseTaskManager
+import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.repository.GhostRepository
 import org.firestorm.deathproRemake.service.CorpseService
 import org.firestorm.deathproRemake.service.GhostService
+import org.firestorm.deathproRemake.storage.database.DatabaseManager
 
 class DeathproRemake : JavaPlugin() {
     companion object {
@@ -53,6 +56,9 @@ class DeathproRemake : JavaPlugin() {
         PacketEvents.getAPI().init();
         packetApi = PacketEvents.getAPI()
 
+        // connect to DB
+        DatabaseManager(this).connect()
+
         loadConfig()
 
         registerListener()
@@ -67,6 +73,10 @@ class DeathproRemake : JavaPlugin() {
 
     override fun onDisable() {
         logger.info("${BaseConstants.PREFIX} &cplugin stopped")
+
+        // clear corpse task
+        CorpseTaskManager.cancelAll()
+
         PacketEvents.getAPI().terminate()
     }
 
