@@ -1,14 +1,19 @@
 package org.firestorm.deathproRemake.model
 
 import org.bukkit.Location
+import org.firestorm.deathproRemake.common.utils.IDGeneratorUtil
 import java.util.UUID
+import kotlin.uuid.Uuid
 
 data class CorpseState(
-    var entityId: Int,
+    var corpseId: Int = IDGeneratorUtil.generateId(),
     var playerName: String,
+    var playerUuid: UUID,
     var location: Location,
     var skin: NpcSkinData,
     var expiredAt: Long,
+    var spawnedAt: Long = System.currentTimeMillis(),
+    var equipment: PlayerEquipment,
     var taskId: Int = -1,
 ) {
     val remainingSeconds: Long
