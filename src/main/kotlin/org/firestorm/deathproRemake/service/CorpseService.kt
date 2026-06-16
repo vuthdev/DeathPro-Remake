@@ -54,10 +54,10 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
 
 
         val now = System.currentTimeMillis()
-        val countdownSeconds = config.ghost.duration
+        val countdownSeconds = config.corpse.duration
         val expiredAt = now + (countdownSeconds * 1000L)
 
-        val task = startDestroyEntity(entityId, 10, entityId)
+        val task = startDestroyEntity(entityId, countdownSeconds)
 
         val corpse = CorpseState(
             corpseId = entityId,
@@ -108,8 +108,8 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                     }
 
                     if (CorpseTaskManager.isActive(corpse.corpseId)) {
-                        val remainingSeconds = corpse.remainingSeconds
-                        val task = startDestroyEntity(corpse.corpseId, remainingSeconds, corpse.corpseId)
+                        val remainingSeconds = corpse.remainingSeconds.toInt()
+                        val task = startDestroyEntity(corpse.corpseId, remainingSeconds)
                         CorpseTaskManager.update(corpse.corpseId, taskId = task.taskId)
                     }
                 }
@@ -138,8 +138,8 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         }, 20L)
     }
 
-    private fun startDestroyEntity(corpseId: Int, seconds: Long, entityId: Int): BukkitTask {
-        val destroyEntity = CorpsePacketManager.destroyEntity(entityId)
+    private fun startDestroyEntity(corpseId: Int, seconds: Int): BukkitTask {
+        val destroyEntity = CorpsePacketManager.destroyEntity(corpseId)
 
         var seconds = seconds
         return scheduler.runTaskTimer(plugin, Runnable {
