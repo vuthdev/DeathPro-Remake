@@ -1,7 +1,11 @@
-package org.firestorm.deathproRemake.storage.config.messageconfig
+package org.firestorm.deathproRemake.storage.config
 
+import net.kyori.adventure.text.Component
 import org.bukkit.configuration.file.YamlConfiguration
 import org.firestorm.deathproRemake.DeathproRemake
+import org.firestorm.deathproRemake.common.constants.MessageConstants
+import org.firestorm.deathproRemake.common.extension.color
+import org.firestorm.deathproRemake.common.extension.formatColor
 import java.io.File
 
 class MessageConfig(private val plugin: DeathproRemake) {
@@ -20,34 +24,30 @@ class MessageConfig(private val plugin: DeathproRemake) {
         cfg = YamlConfiguration.loadConfiguration(file)
     }
 
-    val prefix        get() = bare(MessageConsants.PREFIX, default = "&f[&c&lDEATHPRO&f] ")
+    val ghostTitle get() = bare(MessageConstants.Ghost.TITLE)
+    val ghostSubtitle get() = bare(MessageConstants.Ghost.SUBTITLE)
+    val ghostRespawned get() = bare(MessageConstants.Ghost.RESPAWNED)
+    val ghostCantInteract get() = get(MessageConstants.Ghost.CANT_INTERACT)
+    val ghostCantCommand get() = get(MessageConstants.Ghost.CANT_COMMAND)
 
-    // ── Ghost ──────────────────────────────────────────────────────────────
-    val ghostTitle        get() = bare(MessageKeys.Ghost.TITLE)
-    val ghostSubtitle     get() = bare(MessageKeys.Ghost.SUBTITLE)
-    val ghostActionBar    get() = bare(MessageKeys.Ghost.ACTION_BAR)
-    val ghostRespawned    get() = get(MessageKeys.Ghost.RESPAWNED)
-    val ghostCantInteract get() = get(MessageKeys.Ghost.CANT_INTERACT)
-    val ghostCantCommand  get() = get(MessageKeys.Ghost.CANT_COMMAND)
+    fun ghostSubtitle(time: Int) = bare(MessageConstants.Ghost.SUBTITLE, "time" to time)
 
-    fun ghostSubtitle(time: Long)  = bare(MessageKeys.Ghost.SUBTITLE,   "time" to time)
-    fun ghostActionBar(time: Long) = bare(MessageKeys.Ghost.ACTION_BAR, "time" to time)
+    private fun raw(key: String, default: String = ""): String =
+        cfg.getString(key, default) ?: default
 
-    // ── Corpse ─────────────────────────────────────────────────────────────
-    val corpseExpired get() = get(MessageKeys.Corpse.EXPIRED)
-    val corpseRemoved get() = get(MessageKeys.Corpse.REMOVED)
+    // returns Component — with prefix
+    fun get(key: String, vararg placeholders: Pair<String, Any>): Component =
+        (rawPrefix() + raw(key)).formatColor(*placeholders)
 
-    fun corpseSpawned(location: String) = get(MessageKeys.Corpse.SPAWNED, "location" to location)
+    // returns Component — no prefix
+    fun bare(key: String, vararg placeholders: Pair<String, Any>): Component =
+        raw(key).formatColor(*placeholders)
 
-    // ── Core helpers ───────────────────────────────────────────────────────
+    // returns Component — no prefix, custom default
+    fun bareOrDefault(key: String, default: String): Component =
+        raw(key, default).color()
 
-    fun get(key: String, default: String = "", vararg placeholders: Pair<String, Any>): String {
-        val raw = cfg.getString(key, default) ?: default
-        return (prefix + raw).format(*placeholders)
-    }
-
-    fun bare(key: String, default: String = "", vararg placeholders: Pair<String, Any>): String {
-        val raw = cfg.getString(key, default) ?: default
-        return raw.format(*placeholders)
-    }
+    // raw string prefix (needed for concatenation before colorizing)
+    fun rawPrefix(): String =
+        raw(MessageConstants.PREFIX, "&f[&c&lDEATHPRO&f]")
 }
