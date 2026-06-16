@@ -5,16 +5,24 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 object CorpseTaskManager {
-    private val tasks = ConcurrentHashMap<UUID, Int>()
+    private val tasks = ConcurrentHashMap<Int, Int>()
 
-    fun add(uuid: UUID, taskId: Int) { tasks[uuid] = taskId}
-    fun remove(uuid: UUID) = tasks.remove(uuid)
-    fun get(uuid: UUID) = tasks[uuid]
-    fun update(uuid: UUID, taskId: Int) { tasks[uuid] = taskId }
-    fun cancel(uuid: UUID) {
-        tasks[uuid]?.let {
+    fun add(corpseId: Int, taskId: Int) { tasks[corpseId] = taskId}
+    fun remove(corpseId: Int) = tasks.remove(corpseId)
+    fun get(corpseId: Int) = tasks[corpseId]
+    fun isActive(corpseId: Int) = tasks.contains(corpseId)
+    fun update(corpseId: Int, taskId: Int) { tasks[corpseId] = taskId }
+    fun cancel(corpseId: Int) {
+        tasks[corpseId]?.let {
             Bukkit.getScheduler().cancelTask(it)
-            remove(uuid)
+            remove(corpseId)
         }
+    }
+
+    fun cancelAll() {
+        tasks.values.forEach {
+            Bukkit.getScheduler().cancelTask(it)
+        }
+        tasks.clear()
     }
 }
