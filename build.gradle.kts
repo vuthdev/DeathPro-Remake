@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version "2.4.0"
     id("com.gradleup.shadow") version "9.4.2"
     id("xyz.jpenilla.run-paper") version "3.0.2"
+    kotlin("plugin.serialization") version "2.3.20"
 }
 
 repositories {
@@ -17,9 +18,10 @@ dependencies {
 
     implementation("com.github.retrooper:packetevents-spigot:2.12.2")
     implementation("org.jetbrains.exposed:exposed-core:1.3.0")
-    runtimeOnly("org.jetbrains.exposed:exposed-jdbc:1.3.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:1.3.0")
 
     implementation("org.xerial:sqlite-jdbc:3.53.2.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.mojang:brigadier:1.0.500")
@@ -35,7 +37,7 @@ tasks {
         archiveClassifier.set("")
         relocate("com.github.retrooper", "org.firestorm.deathproRemake.libs.packetevents")
         relocate("io.github.retrooper",  "org.firestorm.deathproRemake.libs.packetevents")
-        relocate("org.jetbrains.exposed","org.firestorm.deathproRemake.libs.exposed")
+        relocate("org.jetbrains.exposed.v1","org.firestorm.deathproRemake.libs.exposed")
         relocate("org.sqlite",           "org.firestorm.deathproRemake.libs.sqlite")
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
