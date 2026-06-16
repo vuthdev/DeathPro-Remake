@@ -82,7 +82,6 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
 
     fun restoreCorpse() {
         val state = CorpseRepository.loadActive()
-        clogger.info(state.toString())
 
         state.forEach { corpse ->
             when {

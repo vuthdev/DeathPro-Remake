@@ -8,21 +8,27 @@ import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseListener
 import org.firestorm.deathproRemake.manager.GhostPostRespawnPending
 import org.firestorm.deathproRemake.manager.GhostRespawnPending
+import org.firestorm.deathproRemake.model.GhostLocationData
 
 class OnRespawnListener(private val p: DeathproRemake): BaseListener(p) {
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR)
     fun onRespawn(e: PlayerRespawnEvent) {
         val player = e.player
 
-        if (GhostRespawnPending.isResolving(player.uniqueId)) return
+        val respawnLocation = e.respawnLocation.clone()
 
-        val data = GhostRespawnPending.get(player.uniqueId) ?: return
+        val deathLocation = GhostRespawnPending.get(player.uniqueId) ?: return
         GhostRespawnPending.remove(player.uniqueId)
 
         // override respawn location
-        e.respawnLocation = data.deadLocation
+        e.respawnLocation = deathLocation
 
-        GhostPostRespawnPending.add(player.uniqueId, data)
+        val ghostLocation = GhostLocationData(
+            deathLocation,
+            respawnLocation
+        )
+
+        GhostPostRespawnPending.add(player.uniqueId, ghostLocation)
     }
 }

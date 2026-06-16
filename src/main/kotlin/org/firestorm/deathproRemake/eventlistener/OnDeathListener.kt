@@ -24,11 +24,7 @@ class OnDeathListener(
             y = location.y + 1
         }
 
-        GhostRespawnPending.startResolving(player.uniqueId)
-        val respawnLocation = getRespawnLocation(player)
-        GhostRespawnPending.stopResolving(player.uniqueId)
-
-        GhostRespawnPending.add(player.uniqueId, deathLocation, respawnLocation)
+        GhostRespawnPending.add(player.uniqueId, deathLocation)
 
         p.corpseService.spawnCorpse(player)
 
@@ -38,22 +34,23 @@ class OnDeathListener(
         }, 1L)
     }
 
-    fun getRespawnLocation(player: Player): Location {
-        val spawnLocation = player.respawnLocation
-        val isBedSpawn = spawnLocation != null
-        val defaultLoc = spawnLocation ?: player.world.spawnLocation
-        val respawnFlag = ImmutableSet.Builder<PlayerRespawnEvent.RespawnFlag>().add(PlayerRespawnEvent.RespawnFlag.BED_SPAWN)
-
-        val respawnEvent = PlayerRespawnEvent(
-            player,
-            defaultLoc,
-            isBedSpawn,
-            true,
-            PlayerRespawnEvent.RespawnReason.PLUGIN,
-            respawnFlag
-        )
-        Bukkit.getPluginManager().callEvent(respawnEvent)
-
-        return respawnEvent.respawnLocation
-    }
+//    fun getRespawnLocation(player: Player): Location {
+//        val spawnLocation = player.respawnLocation
+//        val isBedSpawn = spawnLocation != null
+//        val defaultLoc = spawnLocation ?: player.world.spawnLocation
+//        val respawnFlag = ImmutableSet.Builder<PlayerRespawnEvent.RespawnFlag>()
+//            .add(PlayerRespawnEvent.RespawnFlag.BED_SPAWN)
+//
+//        val respawnEvent = PlayerRespawnEvent(
+//            player,
+//            defaultLoc,
+//            isBedSpawn,
+//            false,
+//            PlayerRespawnEvent.RespawnReason.PLUGIN,
+//            respawnFlag
+//        )
+//        Bukkit.getPluginManager().callEvent(respawnEvent)
+//
+//        return respawnEvent.respawnLocation
+//    }
 }

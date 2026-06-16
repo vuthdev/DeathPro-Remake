@@ -36,14 +36,32 @@ object LocationUtil {
     fun calculateGroundLocation(initialLoc: Location): Location {
         val world = initialLoc.world ?: return initialLoc
 
-        val highestBlock = world.getHighestBlockAt(initialLoc.blockX, initialLoc.blockZ)
+        val startX = initialLoc.blockX
+        val startY = initialLoc.blockY
+        val startZ = initialLoc.blockZ
 
-        val groundLoc = highestBlock.location.apply {
-            yaw = initialLoc.yaw
-            pitch = initialLoc.pitch
+        var targetY = startY
+
+        for (yOffset in 0..16) {
+            val currentY = startY - yOffset
+            if (currentY <= world.minHeight) break
+
+            val block = world.getBlockAt(startX, currentY, startZ)
+
+            if (block.type.isSolid) {
+                targetY = currentY
+                break
+            }
         }
 
-        groundLoc.y = highestBlock.y + 1.25
+        val groundLoc = Location(
+            world,
+            initialLoc.x,
+            targetY + 1.25,
+            initialLoc.z,
+            initialLoc.yaw,
+            initialLoc.pitch
+        )
 
         return groundLoc
     }
