@@ -1,21 +1,26 @@
 package org.firestorm.deathproRemake.service
 
-import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.protocol.player.Equipment
 import com.github.retrooper.packetevents.protocol.player.TextureProperty
-import com.github.retrooper.packetevents.wrapper.PacketWrapper
+import com.github.retrooper.packetevents.protocol.player.UserProfile
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
+import org.firestorm.deathproRemake.common.constants.DefaultSkins
+import org.firestorm.deathproRemake.common.extension.fromPlayerEquipment
 import org.firestorm.deathproRemake.common.utils.IDGeneratorUtil
 import org.firestorm.deathproRemake.common.utils.LocationUtil
 import org.firestorm.deathproRemake.common.utils.UserProfileUtil
-import org.firestorm.deathproRemake.manager.CorpseManager
-import org.firestorm.deathproRemake.manager.UserProfileManager
+import org.firestorm.deathproRemake.manager.CorpseTaskManager
 import org.firestorm.deathproRemake.model.CorpseState
 import org.firestorm.deathproRemake.model.NpcSkinData
+import org.firestorm.deathproRemake.model.PlayerEquipment
 import org.firestorm.deathproRemake.packets.CorpsePacketManager
+import org.firestorm.deathproRemake.repository.CorpseRepository
+import java.util.UUID
 
 class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
 
@@ -23,66 +28,128 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         val userProfile = UserProfileUtil.createProfile(player)
         val entityId = IDGeneratorUtil.generateId()
         val groundLocation = LocationUtil.calculateGroundLocation(player.location)
-        lateinit var skinData: NpcSkinData
+        val inventory = player.inventory
+        val equipment = PlayerEquipment(
+            mainHand = inventory.itemInMainHand,
+            offHand = inventory.itemInOffHand,
+            helmet = inventory.helmet,
+            chestplate = inventory.chestplate,
+            leggings = inventory.leggings,
+            boots = inventory.boots
+        )
 
-        val user = PacketEvents.getAPI().playerManager.getUser(player)
-        if (user != null && user.profile != null) {
-            user.profile.textureProperties.forEach {
-                if(it.name == "textures") {
-                    userProfile.textureProperties.add(
-                        TextureProperty("textures", it.value, it.signature)
-                    )
-                }
-            }
+        val texture = userProfile.textureProperties.firstOrNull { it.name == "textures" }
+
+        val skin = if (texture != null) {
+            NpcSkinData(
+                texture.value,
+                texture.signature
+            )
+        } else {
+            NpcSkinData(
+                DefaultSkins.STEVE_VALUE,
+                DefaultSkins.STEVE_SIGNATURE
+            )
         }
 
-        val createPlayerInfo = CorpsePacketManager.createPlayerInfo(player, userProfile)
-        val spawnEntity = CorpsePacketManager.createSpawnPacket(player, entityId, groundLocation)
-        val removePlayerInfo = CorpsePacketManager.removePlayerInfo(player, userProfile)
-        val createEntityMetadata = CorpsePacketManager.createEntityData(entityId)
-        val destroyEntity = CorpsePacketManager.destroyEntity(entityId)
-        val hideNPCName = CorpsePacketManager.hideNPCName(userProfile)
 
-        val applyEquipment = CorpsePacketManager.createEntityEquipment(player, entityId)
+        val now = System.currentTimeMillis()
+        val countdownSeconds = config.ghost.duration
+        val expiredAt = now + (countdownSeconds * 1000L)
 
+        val task = startDestroyEntity(entityId, 10, entityId)
+
+        val corpse = CorpseState(
+            corpseId = entityId,
+            playerName = player.name,
+            playerUuid = player.uniqueId,
+            location = groundLocation,
+            skin = skin,
+            expiredAt = expiredAt,
+            equipment = equipment,
+            taskId = task.taskId
+        )
+
+        CorpseRepository.insert(corpse)
+        CorpseTaskManager.add(entityId, taskId = task.taskId)
+
+        val equipmentList = equipment.fromPlayerEquipment()
         for (onlinePlayers in Bukkit.getOnlinePlayers()) {
-            playerManager.sendPacket(onlinePlayers, createPlayerInfo)
-            playerManager.sendPacket(onlinePlayers, spawnEntity)
-            playerManager.sendPacket(onlinePlayers, createEntityMetadata)
-
-            // only apply if items not empty
-            applyEquipment?.let { playerManager.sendPacket(onlinePlayers, it) }
-
-            scheduler.runTaskLater(plugin, Runnable {
-                playerManager.sendPacket(onlinePlayers, removePlayerInfo)
-                playerManager.sendPacket(onlinePlayers, hideNPCName)
-            }, 20L)
-
-            val now = System.currentTimeMillis()
-            val countdownSeconds = config.ghost.duration
-            val expiredAt = now + (countdownSeconds * 1000L)
-
-            val task = startDestroyEntity(onlinePlayers, 10,destroyEntity)
-
-//            val corpse = CorpseState(
-//                entityId,
-//                player.name,
-//                groundLocation,
-//                skinData,
-//                expiredAt,
-//                task.taskId
-//            )
-//
-//            CorpseManager.add(player.uniqueId, corpse)
+            sendPacketEntity(onlinePlayers, equipmentList, userProfile, entityId, groundLocation)
         }
     }
 
-    fun startDestroyEntity(player: Player, seconds: Int, packet: PacketWrapper<*>): BukkitTask {
+    fun restoreCorpse() {
+        val state = CorpseRepository.loadActive()
+
+        state.forEach { corpse ->
+            when {
+                corpse.isExpired -> {
+                    CorpseTaskManager.cancel(corpse.corpseId)
+                    CorpseRepository.deleteExpired()
+                }
+                else -> {
+                    val userProfile = UserProfile(
+                        UUID.randomUUID(),
+                        corpse.playerName,
+                        listOf(
+                            TextureProperty("textures", corpse.skin.skinTexture, corpse.skin.skinSignature)
+                        )
+                    )
+
+                    for (onlinePlayer in Bukkit.getOnlinePlayers()) {
+                        sendPacketEntity(
+                            onlinePlayer,
+                            corpse.equipment.fromPlayerEquipment(),
+                            userProfile,
+                            corpse.corpseId,
+                            corpse.location
+                        )
+                    }
+
+                    if (CorpseTaskManager.isActive(corpse.corpseId)) {
+                        val remainingSeconds = corpse.remainingSeconds
+                        val task = startDestroyEntity(corpse.corpseId, remainingSeconds, corpse.corpseId)
+                        CorpseTaskManager.update(corpse.corpseId, taskId = task.taskId)
+                    }
+                }
+            }
+        }
+    }
+
+    fun sendPacketEntity(viewerPlayer: Player, equipment: List<Equipment>, userProfile: UserProfile, entityId: Int, location: Location) {
+        val createPlayerInfo = CorpsePacketManager.createPlayerInfo(userProfile)
+        val spawnEntity = CorpsePacketManager.createSpawnPacket(userProfile, entityId, location)
+        val createEntityMetadata = CorpsePacketManager.createEntityData(entityId)
+        val removePlayerInfo = CorpsePacketManager.removePlayerInfo(userProfile)
+        val hideNPCName = CorpsePacketManager.hideNPCName(userProfile)
+        val applyEquipment = CorpsePacketManager.createEntityEquipment(equipment, entityId)
+
+        playerManager.sendPacket(viewerPlayer, createPlayerInfo)
+        playerManager.sendPacket(viewerPlayer, spawnEntity)
+        playerManager.sendPacket(viewerPlayer, createEntityMetadata)
+
+        // only apply if items not empty
+        applyEquipment?.let { playerManager.sendPacket(viewerPlayer, it) }
+
+        scheduler.runTaskLater(plugin, Runnable {
+            playerManager.sendPacket(viewerPlayer, removePlayerInfo)
+            playerManager.sendPacket(viewerPlayer, hideNPCName)
+        }, 20L)
+    }
+
+    private fun startDestroyEntity(corpseId: Int, seconds: Long, entityId: Int): BukkitTask {
+        val destroyEntity = CorpsePacketManager.destroyEntity(entityId)
+
         var seconds = seconds
         return scheduler.runTaskTimer(plugin, Runnable {
             when {
                 seconds <= 0 -> {
-                    playerManager.sendPacket(player, packet)
+                    for (onlinePlayers in Bukkit.getOnlinePlayers()) {
+                        playerManager.sendPacket(onlinePlayers, destroyEntity)
+                    }
+                    CorpseRepository.delete(corpseId)
+                    CorpseTaskManager.cancel(corpseId)
                 }
                 else -> {
                     --seconds
