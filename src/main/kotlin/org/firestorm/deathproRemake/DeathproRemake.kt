@@ -2,7 +2,6 @@ package org.firestorm.deathproRemake
 
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.PacketEventsAPI
-import com.github.retrooper.packetevents.manager.server.ServerVersion
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import org.bukkit.plugin.java.JavaPlugin
 import org.firestorm.deathproRemake.annotations.handler.CommandRegistry
@@ -11,8 +10,6 @@ import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.constants.GhostKeys
 import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
-import org.firestorm.deathproRemake.config.DeathProConfig
-import org.firestorm.deathproRemake.eventlistener.CheckIndexListener
 import org.firestorm.deathproRemake.eventlistener.OnDeathListener
 import org.firestorm.deathproRemake.eventlistener.OnGhostStateListener
 import org.firestorm.deathproRemake.eventlistener.OnJoinListener
@@ -22,10 +19,11 @@ import org.firestorm.deathproRemake.eventlistener.OnQuitListener
 import org.firestorm.deathproRemake.eventlistener.OnRespawnListener
 import org.firestorm.deathproRemake.eventlistener.SpawnMessageSuppressor
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
-import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.repository.GhostRepository
 import org.firestorm.deathproRemake.service.CorpseService
 import org.firestorm.deathproRemake.service.GhostService
+import org.firestorm.deathproRemake.storage.config.DeathProConfig
+import org.firestorm.deathproRemake.storage.config.MessageConfig
 import org.firestorm.deathproRemake.storage.database.DatabaseManager
 
 class DeathproRemake : JavaPlugin() {
@@ -35,6 +33,8 @@ class DeathproRemake : JavaPlugin() {
     }
 
     lateinit var deathProConfig: DeathProConfig
+        private set
+    lateinit var messageConfig: MessageConfig
         private set
     lateinit var ghostService: GhostService
         private set
@@ -67,7 +67,7 @@ class DeathproRemake : JavaPlugin() {
         registerRepository()
         registerService()
 
-        CommandRegistry.scan(this, DeathProCommand(corpseService))
+        CommandRegistry.scan(this, DeathProCommand(this, corpseService))
         GhostKeys.init(this)
 
         clogger.info("${BaseConstants.PREFIX} &aplugin started".color())
@@ -85,6 +85,12 @@ class DeathproRemake : JavaPlugin() {
     fun loadConfig() {
         saveDefaultConfig()
         deathProConfig = DeathProConfig(this)
+        messageConfig = MessageConfig(this)
+    }
+
+    fun reloadAllConfig() {
+        deathProConfig.reload()
+        messageConfig.reload()
     }
 
     fun registerListener() {
