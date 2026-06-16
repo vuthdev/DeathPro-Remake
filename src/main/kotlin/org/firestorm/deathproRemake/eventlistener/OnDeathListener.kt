@@ -34,7 +34,7 @@ class OnDeathListener(
 
         p.corpseService.spawnCorpse(player)
 
-        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+        scheduler.runTaskLater(plugin, Runnable {
             // force respawn
             player.spigot().respawn()
         }, 1L)

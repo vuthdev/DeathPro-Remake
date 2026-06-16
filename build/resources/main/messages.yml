@@ -1,0 +1,8 @@
+prefix: "&f[&c&lDEATHPRO&f]"
+
+ghost:
+  title: "&cYou died!"
+  subtitle: "&7Respawning in &f{time}s"
+  respawned: "&aYou have respawned!"
+  cant-interact: "&cYou can't do that while dead."
+  cant-command: "&cYou can't use commands while dead."

@@ -14,7 +14,7 @@ class OnPlayerCommandListener(private val p: DeathproRemake): BaseListener(p) {
         val player = e.player
 
         if (player.isGhost()) {
-            player.sendMessage("${BaseConstants.PREFIX} &cyou cannot command while in ghost mode!".color())
+            player.sendMessage(messageConfig.ghostCantCommand)
             e.isCancelled = true
         }
     }

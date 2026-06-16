@@ -2,8 +2,10 @@ package org.firestorm.deathproRemake.commands
 
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.annotations.RegisterCommand
 import org.firestorm.deathproRemake.annotations.SubCommand
+import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.service.CorpseService
 
 @RegisterCommand(
@@ -12,6 +14,7 @@ import org.firestorm.deathproRemake.service.CorpseService
     usage = "/deathpro",
 )
 class DeathProCommand(
+    val p: DeathproRemake,
     val corpseService: CorpseService
 ) {
 
@@ -29,5 +32,11 @@ class DeathProCommand(
     fun spawnCorpse(sender: CommandSender) {
         val player = sender as? Player ?: return
         corpseService.spawnCorpse(player)
+    }
+
+    @SubCommand(name = "reload")
+    fun reload(sender: CommandSender) {
+        p.reloadAllConfig()
+        sender.sendMessage("${p.messageConfig.rawPrefix()} &areload config successfully".color())
     }
 }

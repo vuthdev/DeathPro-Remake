@@ -1,0 +1,6 @@
+ghost:
+  duration: 10
+  allow-chat: true
+
+corpse:
+  duration: 10
