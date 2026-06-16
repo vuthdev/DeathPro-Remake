@@ -55,7 +55,6 @@ class GhostService(
                 ghostRepository.clear(player)
                 applyGhostEffect(player, false)
                 player.teleportAsync(state.respawnLocation)
-                player.sendMessage("${BaseConstants.PREFIX} &aYour ghost timer expired while offline. You have respawned.".color())
             }
             else -> {
                 applyGhostEffect(player, true)
@@ -68,8 +67,8 @@ class GhostService(
 
                 player.showTitle(
                     Title.title(
-                        Component.text("§cStill dead!"),
-                        Component.text("§7Respawning in §f${remaining}s"),
+                        messageConfig.ghostTitle,
+                        messageConfig.ghostSubtitle(remaining),
                         Title.Times.times(
                             Duration.ofSeconds(2),
                             Duration.ofSeconds(5),
@@ -93,7 +92,7 @@ class GhostService(
 
         player.teleportAsync(ghost.respawnLocation)
         val title = Title.title(
-            "&aRespawned!".color(),
+            messageConfig.ghostRespawned,
             "".color(),
             Title.Times.times(
                 Duration.ofSeconds(0),
@@ -119,8 +118,8 @@ class GhostService(
                 }
                 else -> {
                     val title = Title.title(
-                        "&cYou Died!".color(),
-                        "&aRespawning in &f${remaining}s".color(),
+                        messageConfig.ghostTitle,
+                        messageConfig.ghostSubtitle,
                         Title.Times.times(
                             Duration.ofSeconds(0),
                             Duration.ofSeconds(3),
