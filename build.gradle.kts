@@ -28,6 +28,8 @@ dependencies {
     implementation(kotlin("reflect"))
 }
 
+version = "1.0.1"
+
 kotlin {
     jvmToolchain(21)
 }
