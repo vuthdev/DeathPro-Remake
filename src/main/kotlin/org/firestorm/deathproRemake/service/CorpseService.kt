@@ -1,5 +1,6 @@
 package org.firestorm.deathproRemake.service
 
+import com.github.retrooper.packetevents.protocol.entity.pose.EntityPose
 import com.github.retrooper.packetevents.protocol.player.Equipment
 import com.github.retrooper.packetevents.protocol.player.TextureProperty
 import com.github.retrooper.packetevents.protocol.player.UserProfile
@@ -121,7 +122,9 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
     fun sendPacketEntity(viewerPlayer: Player, equipment: List<Equipment>, userProfile: UserProfile, entityId: Int, location: Location) {
         val createPlayerInfo = CorpsePacketManager.createPlayerInfo(userProfile)
         val spawnEntity = CorpsePacketManager.createSpawnPacket(userProfile, entityId, location)
-        val createEntityMetadata = CorpsePacketManager.createEntityData(entityId)
+
+        val pose = if (config.corpse.pose == "SWIMMING") EntityPose.SWIMMING else EntityPose.SLEEPING
+        val createEntityMetadata = CorpsePacketManager.createEntityData(entityId, pose)
         val removePlayerInfo = CorpsePacketManager.removePlayerInfo(userProfile)
         val hideNPCName = CorpsePacketManager.hideNPCName(userProfile)
         val applyEquipment = CorpsePacketManager.createEntityEquipment(equipment, entityId)
