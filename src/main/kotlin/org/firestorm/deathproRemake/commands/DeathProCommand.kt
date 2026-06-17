@@ -12,7 +12,7 @@ import org.firestorm.deathproRemake.service.CorpseService
     name = "deathpro",
     aliases = ["dp"],
     usage = "/deathpro",
-    permission = "deathpro.use"
+    permission = "deathpro.admin"
 )
 class DeathProCommand(
     val p: DeathproRemake,
@@ -24,19 +24,19 @@ class DeathProCommand(
         sendHelpMenu(sender)
     }
 
-    @SubCommand(name = "help", permission = "deathpro.help")
+    @SubCommand(name = "help", permission = "deathpro.admin")
     fun help(sender: CommandSender) {
         sendHelpMenu(sender)
     }
 
-    @SubCommand(name = "spawncorpse", playerOnly = true, permission = "deathpro.spawncorpse")
+    @SubCommand(name = "spawncorpse", playerOnly = true, permission = "deathpro.admin")
     fun spawnCorpse(sender: CommandSender) {
         val player = sender as? Player ?: return
         player.sendMessage("${p.messageConfig.rawPrefix()}spawned successfully!")
         corpseService.spawnCorpse(player)
     }
 
-    @SubCommand(name = "reload", permission = "deathpro.reload")
+    @SubCommand(name = "reload", permission = "deathpro.admin")
     fun reload(sender: CommandSender) {
         p.reloadAllConfig()
         sender.sendMessage("${p.messageConfig.rawPrefix()}&areload config successfully".color())
