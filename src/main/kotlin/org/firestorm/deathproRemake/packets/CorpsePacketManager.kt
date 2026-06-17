@@ -55,15 +55,14 @@ object CorpsePacketManager {
         return packet
     }
 
-    fun createEntityData(entityId: Int): PacketWrapper<*> {
-        val sleepingPost = EntityPose.SLEEPING
+    fun createEntityData(entityId: Int, pose: EntityPose): PacketWrapper<*> {
         val allLayersBitmask = 127.toByte()
 
         val skinIndex = if(serverVersion.isNewerThanOrEquals(ServerVersion.V_1_21_9)) 16 else 17
 
         val metaDataItems = listOf<EntityData<*>>(
             EntityData(0, EntityDataTypes.BYTE, 0.toByte()),
-            EntityData(6, EntityDataTypes.ENTITY_POSE,sleepingPost),
+            EntityData(6, EntityDataTypes.ENTITY_POSE,pose),
             EntityData(skinIndex, EntityDataTypes.BYTE, allLayersBitmask)
         )
 
