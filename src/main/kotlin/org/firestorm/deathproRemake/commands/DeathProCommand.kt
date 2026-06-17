@@ -32,7 +32,7 @@ class DeathProCommand(
     @SubCommand(name = "spawncorpse", playerOnly = true, permission = "deathpro.admin")
     fun spawnCorpse(sender: CommandSender) {
         val player = sender as? Player ?: return
-        player.sendMessage("${p.messageConfig.rawPrefix()}spawned successfully!")
+        player.sendMessage("${p.messageConfig.rawPrefix()}spawned successfully!".color())
         corpseService.spawnCorpse(player)
     }
 
