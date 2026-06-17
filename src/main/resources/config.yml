@@ -4,3 +4,5 @@ ghost:
 
 corpse:
   duration: 10
+  # available pose: SLEEPING, SWIMMING
+  pose: SLEEPING
