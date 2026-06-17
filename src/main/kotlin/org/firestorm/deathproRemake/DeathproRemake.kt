@@ -10,6 +10,7 @@ import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.constants.GhostKeys
 import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
+import org.firestorm.deathproRemake.eventlistener.OnChatListener
 import org.firestorm.deathproRemake.eventlistener.OnDeathListener
 import org.firestorm.deathproRemake.eventlistener.OnGhostStateListener
 import org.firestorm.deathproRemake.eventlistener.OnJoinListener
@@ -102,6 +103,7 @@ class DeathproRemake : JavaPlugin() {
         OnQuitListener(this).register()
         OnGhostStateListener(this).register()
         OnPlayerCommandListener(this).register()
+        OnChatListener(this).register()
     }
 
     fun registerPacketListener() {
