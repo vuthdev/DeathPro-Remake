@@ -7,5 +7,6 @@ import org.firestorm.deathproRemake.DeathproRemake
 abstract class BaseListener(protected val plugin: DeathproRemake) : Listener {
     fun register() = Bukkit.getPluginManager().registerEvents(this, plugin)
     protected val messageConfig get() = plugin.messageConfig
+    protected val config get() = plugin.deathProConfig
     protected val scheduler get() = Bukkit.getScheduler()
 }
