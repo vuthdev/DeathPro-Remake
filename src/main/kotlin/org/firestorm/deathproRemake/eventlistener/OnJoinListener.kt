@@ -15,7 +15,7 @@ class OnJoinListener(private val p: DeathproRemake): BaseListener(p) {
 
         if (!player.isGhost()) return
 
-        p.corpseService.restoreCorpse()
+        p.corpseService.restoreCorpse(player)
         p.ghostService.restoreGhostMode(player)
     }
 }

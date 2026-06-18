@@ -4,11 +4,10 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
-import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.common.constants.GhostKeys
 import org.firestorm.deathproRemake.model.GhostState
 
-class GhostRepository(private val plugin: DeathproRemake) {
+object PdcGhostRepository {
 
     fun save(player: Player, ghostState: GhostState) {
         val pdc = player.persistentDataContainer

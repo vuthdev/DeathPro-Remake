@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.protocol.entity.pose.EntityPose
 import com.github.retrooper.packetevents.protocol.player.Equipment
 import com.github.retrooper.packetevents.protocol.player.TextureProperty
 import com.github.retrooper.packetevents.protocol.player.UserProfile
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Player
@@ -17,11 +18,13 @@ import org.firestorm.deathproRemake.common.utils.IDGeneratorUtil
 import org.firestorm.deathproRemake.common.utils.LocationUtil
 import org.firestorm.deathproRemake.common.utils.UserProfileUtil
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
+import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.CorpseState
 import org.firestorm.deathproRemake.model.NpcSkinData
 import org.firestorm.deathproRemake.model.PlayerEquipment
 import org.firestorm.deathproRemake.packets.CorpsePacketManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
+import org.firestorm.deathproRemake.repository.PdcCorpseRepository
 import java.util.UUID
 
 class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
@@ -54,12 +57,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             )
         }
 
-
-        val now = System.currentTimeMillis()
         val countdownSeconds = config.corpse.duration
-        val expiredAt = now + (countdownSeconds * 1000L)
-
-        val task = startDestroyEntity(entityId, countdownSeconds)
 
         val corpse = CorpseState(
             corpseId = entityId,
@@ -67,28 +65,35 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             playerUuid = player.uniqueId,
             location = groundLocation,
             skin = skin,
-            expiredAt = expiredAt,
+            remainingSeconds = countdownSeconds,
             equipment = equipment,
-            taskId = task.taskId
         )
 
         CorpseRepository.insert(corpse)
-        CorpseTaskManager.add(entityId, taskId = task.taskId)
+        PdcCorpseRepository.save(player, countdownSeconds).let {
+            clogger.info("save corpse: $it")
+        }
+
+        val task = startDestroyEntity(player, corpse)
+        CorpseTaskManager.add(corpse.corpseId, taskId = task.taskId)
 
         val equipmentList = equipment.fromPlayerEquipment()
         for (onlinePlayers in Bukkit.getOnlinePlayers()) {
-            sendPacketEntity(onlinePlayers, equipmentList, userProfile, entityId, groundLocation)
+            sendPacketEntity(onlinePlayers, equipmentList, userProfile, corpse.corpseId, groundLocation)
         }
+        clogger.info("Finished creating corpse")
     }
 
-    fun restoreCorpse() {
+    fun restoreCorpse(player: Player) {
         val state = CorpseRepository.loadActive()
 
         state.forEach { corpse ->
             when {
                 corpse.isExpired -> {
                     CorpseTaskManager.cancel(corpse.corpseId)
-                    CorpseRepository.deleteExpired()
+                    CorpseRepository.delete(corpse.corpseId)
+                    PdcCorpseRepository.clear(player)
+                    clogger.info("cancel and clear corpse")
                 }
                 else -> {
                     val userProfile = UserProfile(
@@ -98,6 +103,8 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                             TextureProperty("textures", corpse.skin.skinTexture, corpse.skin.skinSignature)
                         )
                     )
+
+                    clogger.info("restore corpse")
 
                     for (onlinePlayer in Bukkit.getOnlinePlayers()) {
                         sendPacketEntity(
@@ -110,8 +117,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                     }
 
                     if (CorpseTaskManager.isActive(corpse.corpseId)) {
-                        val remainingSeconds = corpse.remainingSeconds.toInt()
-                        val task = startDestroyEntity(corpse.corpseId, remainingSeconds)
+                        val task = startDestroyEntity(player, corpse)
                         CorpseTaskManager.update(corpse.corpseId, taskId = task.taskId)
                     }
                 }
@@ -142,23 +148,37 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         }, 20L)
     }
 
-    private fun startDestroyEntity(corpseId: Int, seconds: Int): BukkitTask {
-        val destroyEntity = CorpsePacketManager.destroyEntity(corpseId)
+    private fun startDestroyEntity(player: Player, state: CorpseState): BukkitTask {
+        val destroyEntity = CorpsePacketManager.destroyEntity(state.corpseId)
+        var seconds = state.remainingSeconds
+        lateinit var task: BukkitTask
 
-        var seconds = seconds
-        return scheduler.runTaskTimer(plugin, Runnable {
-            when {
-                seconds <= 0 -> {
-                    for (onlinePlayers in Bukkit.getOnlinePlayers()) {
-                        playerManager.sendPacket(onlinePlayers, destroyEntity)
-                    }
-                    CorpseRepository.delete(corpseId)
-                    CorpseTaskManager.cancel(corpseId)
-                }
-                else -> {
-                    --seconds
-                }
+        task = scheduler.runTaskTimer(plugin, Runnable {
+            if (!player.isOnline) {
+                clogger.info("Player went offline. Cancelling countdown thread for corpse ID: ${state.corpseId}")
+                task.cancel()
+                return@Runnable
             }
+
+            if (seconds <= 0) {
+                for (onlinePlayers in Bukkit.getOnlinePlayers()) {
+                    playerManager.sendPacket(onlinePlayers, destroyEntity)
+                }
+                CorpseRepository.delete(state.corpseId)
+                CorpseTaskManager.remove(state.corpseId)
+                PdcCorpseRepository.clear(player)
+                clogger.info("delete corpse")
+                task.cancel()
+                return@Runnable
+            }
+
+            // save record in pdc
+            clogger.info("save corpse timer")
+            PdcCorpseRepository.save(player, seconds)
+
+            --seconds
         }, 0L, 20L)
+
+        return task
     }
 }

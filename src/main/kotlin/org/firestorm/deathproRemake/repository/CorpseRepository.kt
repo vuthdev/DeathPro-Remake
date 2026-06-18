@@ -1,19 +1,24 @@
 package org.firestorm.deathproRemake.repository
 
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.entity.Player
 import org.firestorm.deathproRemake.common.utils.EquipmentSerializer
 import org.firestorm.deathproRemake.model.CorpseState
 import org.firestorm.deathproRemake.model.NpcSkinData
 import org.firestorm.deathproRemake.storage.database.table.CorpseTable
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.upsert
+import java.util.UUID
 
 object CorpseRepository {
 
@@ -28,11 +33,17 @@ object CorpseRepository {
             it[z] = state.location.z
             it[skinTexture] = state.skin.skinTexture
             it[skinSignature] = state.skin.skinSignature
-            it[expiredAt] = state.expiredAt
+            it[remainingSeconds] = state.remainingSeconds
             it[spawnedAt] = state.spawnedAt
 
             // convert to json
             it[equipmentJson] = EquipmentSerializer.toJson(state.equipment)
+        }
+    }
+
+    fun updateRemainingSeconds(corpseId: Int, player: Player, seconds: Long) = transaction {
+        CorpseTable.update( { (CorpseTable.corpseId eq corpseId) and (CorpseTable.playerUuid eq player.uniqueId) } ) {
+            it[remainingSeconds] = seconds
         }
     }
 
@@ -44,13 +55,13 @@ object CorpseRepository {
 
     fun deleteExpired() = transaction {
         CorpseTable.deleteWhere {
-            expiredAt lessEq System.currentTimeMillis()
+            remainingSeconds lessEq 0
         }
     }
 
     fun loadActive(): List<CorpseState> = transaction {
         CorpseTable.selectAll()
-            .where { CorpseTable.expiredAt greater System.currentTimeMillis() }
+            .where { CorpseTable.remainingSeconds greater 0 }
             .mapNotNull { runCatching { it.toCorpseState() }.getOrNull() }
     }
 
@@ -76,7 +87,7 @@ object CorpseRepository {
                 skinTexture = this[CorpseTable.skinTexture],
                 skinSignature = this[CorpseTable.skinSignature]
             ),
-            expiredAt = this[CorpseTable.expiredAt],
+            remainingSeconds = this[CorpseTable.remainingSeconds],
             spawnedAt = this[CorpseTable.spawnedAt],
             equipment = EquipmentSerializer.fromJson(this[CorpseTable.equipmentJson])
         )

@@ -17,4 +17,11 @@ object GhostTaskManager {
             remove(uuid)
         }
     }
+
+    fun cancelAll() {
+        tasks.values.forEach {
+            Bukkit.getScheduler().cancelTask(it)
+        }
+        tasks.clear()
+    }
 }

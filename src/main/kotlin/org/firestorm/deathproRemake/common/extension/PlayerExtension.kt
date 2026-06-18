@@ -5,5 +5,5 @@ import org.bukkit.persistence.PersistentDataType
 import org.firestorm.deathproRemake.common.constants.GhostKeys
 
 fun Player.isGhost(): Boolean {
-    return this.persistentDataContainer.has(GhostKeys.EXPIRE_AT, PersistentDataType.LONG)
+    return this.persistentDataContainer.has(GhostKeys.REMAINING_SECONDS, PersistentDataType.LONG)
 }

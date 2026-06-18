@@ -1,6 +1,5 @@
 package org.firestorm.deathproRemake.service
 
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -11,64 +10,64 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
-import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
-import org.firestorm.deathproRemake.repository.GhostRepository
+import org.firestorm.deathproRemake.repository.PdcGhostRepository
 import java.time.Duration
 import java.util.UUID
-import kotlin.time.Duration.Companion.seconds
 
-class GhostService(
-    override val plugin: DeathproRemake,
-    val ghostRepository: GhostRepository
-): BaseService(plugin) {
+class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
 
     fun enterGhostMode(player: Player, deathLocation: Location, respawnLocation: Location) {
-        val now = System.currentTimeMillis()
         val countdownSeconds = config.ghost.duration
-        val expiredAt = now + (countdownSeconds * 1000L)
 
-        val task = startCountdown(player, countdownSeconds)
-
-         val ghostState = GhostState(
+        val ghostState = GhostState(
             playerUuid = player.uniqueId,
             playerName = player.name,
             deathLocation = deathLocation,
             respawnLocation = respawnLocation,
-            taskId = task.taskId,
-            expiredAt = expiredAt,
+            remainingSeconds = countdownSeconds,
         )
-
         applyGhostEffect(player, true)
 //        player.teleportAsync(deathLocation.clone().add(0.0, 1.5, 0.0))
 
+        val task = startCountdown(player, ghostState)
         GhostTaskManager.add(player.uniqueId, task.taskId)
-        ghostRepository.save(player, ghostState)
+        PdcGhostRepository.save(player, ghostState)
+    }
+
+    fun pauseGhostMode(player: Player, currentRemaining: Long) {
+        GhostTaskManager.cancel(player.uniqueId)
+
+        val state = PdcGhostRepository.load(player)
+        PdcGhostRepository.save(player, state.copy(remainingSeconds = currentRemaining))
     }
 
     fun restoreGhostMode(player: Player) {
-        val state = ghostRepository.load(player)
+        val state = PdcGhostRepository.load(player)
 
         when {
             state.isExpired -> {
-                ghostRepository.clear(player)
+                PdcGhostRepository.clear(player)
                 applyGhostEffect(player, false)
                 player.teleportAsync(state.respawnLocation)
+                clogger.info("ghost mode expired")
             }
             else -> {
                 applyGhostEffect(player, true)
 
                 player.teleportAsync(state.deathLocation)
 
-                val remaining = state.remainingSeconds.toInt()
-                val task = startCountdown(player, remaining)
+                val task = startCountdown(player, state)
                 GhostTaskManager.update(player.uniqueId, task.taskId)
 
+                val remaining = state.remainingSeconds.toInt()
                 val title = messageConfig.ghostTitle
                 val subTitle = messageConfig.ghostSubtitle(remaining)
+
+                clogger.info("ghost mode restored")
 
                 player.showTitle(
                     Title.title(
@@ -87,11 +86,11 @@ class GhostService(
 
     fun exitGhostMode(uuid: UUID) {
         val player = Bukkit.getPlayer(uuid) ?: return
-        val ghost = ghostRepository.load(player)
+        val ghost = PdcGhostRepository.load(player)
 
         // Cancel countdown task
         GhostTaskManager.cancel(uuid)
-        ghostRepository.clear(player)
+        PdcGhostRepository.clear(player)
 
         applyGhostEffect(player, false)
 
@@ -105,6 +104,7 @@ class GhostService(
                 Duration.ofSeconds(2)
             )
         )
+        clogger.info("exit ghost mode")
         player.showTitle(title)
     }
 
@@ -114,29 +114,35 @@ class GhostService(
      ==============================
      */
 
-    private fun startCountdown(player: Player, seconds: Int): BukkitTask {
-        var remaining = seconds
+    private fun startCountdown(player: Player, state: GhostState): BukkitTask {
+        var remaining = state.remainingSeconds
         return scheduler.runTaskTimer(plugin, Runnable {
-            when {
-                remaining <= 0 -> {
-                    exitGhostMode(player.uniqueId)
-                }
-                else -> {
-                    val title = Title.title(
-                        messageConfig.ghostTitle,
-                        messageConfig.ghostSubtitle(remaining),
-                        Title.Times.times(
-                            Duration.ofSeconds(0),
-                            Duration.ofSeconds(3),
-                            Duration.ofSeconds(0)
-                        )
-                    )
-                    player.showTitle(title)
-                    // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
-                    remaining--
-                }
+            if (!player.isOnline) return@Runnable
+
+            if (remaining <= 0) {
+                exitGhostMode(player.uniqueId)
+                clogger.info("ghost mode ${player.name} remaining $remaining")
+                return@Runnable
             }
 
+            val title = Title.title(
+                messageConfig.ghostTitle,
+                messageConfig.ghostSubtitle(remaining.toInt()),
+                Title.Times.times(
+                    Duration.ofSeconds(0),
+                    Duration.ofSeconds(3),
+                    Duration.ofSeconds(0)
+                )
+            )
+            player.showTitle(title)
+            // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
+
+            clogger.info("ghost mode timer")
+            // save current record
+            val current = PdcGhostRepository.load(player)
+            PdcGhostRepository.save(player, current.copy(remainingSeconds = remaining))
+
+            remaining--
         }, 0L, 20L)
     }
 
@@ -162,22 +168,12 @@ class GhostService(
                 }
 
         } else {
-            if (player.isOp) {
-                player.apply {
-                    allowFlight = true
-                    isFlying = false
-                    isInvisible = false
-                    isInvulnerable = false
-                    isSilent = false
-                }
-            } else {
-                player.apply {
-                    allowFlight = false
-                    isFlying = false
-                    isInvisible = false
-                    isInvulnerable = false
-                    isSilent = false
-                }
+            player.apply {
+                allowFlight = false
+                isFlying = false
+                isInvisible = false
+                isInvulnerable = false
+                isSilent = false
             }
         }
     }

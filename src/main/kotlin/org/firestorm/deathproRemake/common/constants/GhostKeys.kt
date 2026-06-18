@@ -5,7 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.firestorm.deathproRemake.DeathproRemake
 
 object GhostKeys {
-    lateinit var EXPIRE_AT: NamespacedKey private set
+    lateinit var REMAINING_SECONDS: NamespacedKey private set
     lateinit var DEATH_WORLD: NamespacedKey private set
     lateinit var DEATH_X: NamespacedKey private set
     lateinit var DEATH_Y: NamespacedKey private set
@@ -16,7 +16,7 @@ object GhostKeys {
     lateinit var RESPAWN_Z: NamespacedKey private set
 
     fun init(plugin: JavaPlugin) {
-        EXPIRE_AT = NamespacedKey(plugin, "ghost_expires_at")
+        REMAINING_SECONDS = NamespacedKey(plugin, "ghost_remaining_seconds")
         DEATH_WORLD = NamespacedKey(plugin, "ghost_death_world")
         DEATH_X = NamespacedKey(plugin, "ghost_death_x")
         DEATH_Y = NamespacedKey(plugin, "ghost_death_y")

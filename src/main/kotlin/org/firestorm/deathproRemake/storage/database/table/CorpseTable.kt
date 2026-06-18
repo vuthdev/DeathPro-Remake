@@ -13,7 +13,7 @@ object CorpseTable : Table("corpses") {
     val z = double("z")
     val skinTexture = text("skin_texture")
     val skinSignature = text("skin_signature").nullable()
-    val expiredAt = long("expired_at")
+    val remainingSeconds = long("remaining_seconds")
     val spawnedAt = long("spawnedAt")
 
     // equipment store as string
