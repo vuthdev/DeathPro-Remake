@@ -20,12 +20,12 @@ class GhostRepository(private val plugin: DeathproRemake) {
         pdc.set(GhostKeys.RESPAWN_X, PersistentDataType.DOUBLE, ghostState.respawnLocation.x)
         pdc.set(GhostKeys.RESPAWN_Y, PersistentDataType.DOUBLE, ghostState.respawnLocation.y)
         pdc.set(GhostKeys.RESPAWN_Z, PersistentDataType.DOUBLE, ghostState.respawnLocation.z)
-        pdc.set(GhostKeys.EXPIRE_AT, PersistentDataType.LONG, ghostState.expiredAt)
+        pdc.set(GhostKeys.REMAINING_SECONDS, PersistentDataType.LONG, ghostState.remainingSeconds)
     }
 
     fun load(player: Player): GhostState {
         val pdc = player.persistentDataContainer
-        val expireAt = pdc.get(GhostKeys.EXPIRE_AT, PersistentDataType.LONG)
+        val remainingSeconds = pdc.get(GhostKeys.REMAINING_SECONDS, PersistentDataType.LONG) ?: 10
 
         val deathWorldName = pdc.get(GhostKeys.DEATH_WORLD, PersistentDataType.STRING)
         val deathWorld = Bukkit.getWorld(deathWorldName ?: "world")
@@ -48,7 +48,7 @@ class GhostRepository(private val plugin: DeathproRemake) {
                 pdc.get(GhostKeys.RESPAWN_Y, PersistentDataType.DOUBLE) ?: 0.0,
                 pdc.get(GhostKeys.RESPAWN_Z, PersistentDataType.DOUBLE) ?: 0.0
             ),
-            expiredAt = expireAt ?: 5
+            remainingSeconds = remainingSeconds
         )
     }
 
@@ -62,10 +62,6 @@ class GhostRepository(private val plugin: DeathproRemake) {
         pdc.remove(GhostKeys.RESPAWN_X)
         pdc.remove(GhostKeys.RESPAWN_Y)
         pdc.remove(GhostKeys.RESPAWN_Z)
-        pdc.remove(GhostKeys.EXPIRE_AT)
-    }
-
-    fun exists(player: Player): Boolean {
-        return player.persistentDataContainer.has(GhostKeys.EXPIRE_AT, PersistentDataType.LONG)
+        pdc.remove(GhostKeys.REMAINING_SECONDS)
     }
 }
