@@ -11,14 +11,12 @@ data class CorpseState(
     var playerUuid: UUID,
     var location: Location,
     var skin: NpcSkinData,
-    var expiredAt: Long,
+    var remainingSeconds: Long,
     var spawnedAt: Long = System.currentTimeMillis(),
     var equipment: PlayerEquipment,
     var taskId: Int = -1,
 ) {
-    val remainingSeconds: Long
-        get() = ((expiredAt - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
 
     val isExpired: Boolean
-        get() = System.currentTimeMillis() >= expiredAt
+        get() = remainingSeconds <= 0
 }
