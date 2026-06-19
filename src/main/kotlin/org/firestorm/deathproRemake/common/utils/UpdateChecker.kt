@@ -14,7 +14,7 @@ class UpdateChecker(
     private val githubUser: String,
     private val githubRepo: String,
 ) {
-    private val currentVersion = plugin.description.version
+    private val currentVersion = plugin.pluginMeta.version
     private var latestVersion: String? = null
     private var updateAvailable = false
 
