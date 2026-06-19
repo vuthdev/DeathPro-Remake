@@ -1,6 +1,7 @@
 package org.firestorm.deathproRemake.eventlistener
 
 import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerQuitEvent
 import org.firestorm.deathproRemake.DeathproRemake
@@ -22,12 +23,21 @@ class OnQuitListener(
         if (!player.isGhost()) return
         GhostTaskManager.cancel(player.uniqueId)
         val seconds = PdcCorpseRepository.load(player)
-        scheduler.runTaskAsynchronously(plugin, Runnable {
-            val playersCorpses = CorpseRepository.loadActive().filter { it.playerUuid == player.uniqueId }
 
-            playersCorpses.forEach {
-                CorpseRepository.updateRemainingSeconds(it.corpseId, player, seconds)
-            }
-        })
+        if (!plugin.isEnabled) {
+            saveCorpseData(player, seconds)
+        } else {
+            scheduler.runTaskAsynchronously(plugin, Runnable {
+                saveCorpseData(player, seconds)
+            })
+        }
+    }
+
+    private fun saveCorpseData(player: Player, seconds: Long) {
+        val playersCorpses = CorpseRepository.loadActive().filter { it.playerUuid == player.uniqueId }
+
+        playersCorpses.forEach {
+            CorpseRepository.updateRemainingSeconds(it.corpseId, player, seconds)
+        }
     }
 }
