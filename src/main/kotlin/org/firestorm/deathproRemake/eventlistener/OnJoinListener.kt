@@ -13,6 +13,10 @@ class OnJoinListener(private val p: DeathproRemake): BaseListener(p) {
     fun onJoin(e: PlayerJoinEvent) {
         val player = e.player
 
+        if (config.updateCheckerConfig.notifyOps && config.updateCheckerConfig.enabled) {
+            p.updateChecker.notifyPlayer(player)
+        }
+
         if (!player.isGhost()) return
 
         scheduler.runTaskLater(plugin, Runnable {

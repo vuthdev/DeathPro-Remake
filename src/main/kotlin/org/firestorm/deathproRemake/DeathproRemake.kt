@@ -6,6 +6,7 @@ import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import org.bukkit.plugin.java.JavaPlugin
 import org.firestorm.deathproRemake.annotations.handler.CommandRegistry
 import org.firestorm.deathproRemake.commands.DeathProCommand
+import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.constants.CorpseKeys
 import org.firestorm.deathproRemake.common.constants.GhostKeys
 import org.firestorm.deathproRemake.common.extension.clogger
@@ -21,6 +22,7 @@ import org.firestorm.deathproRemake.eventlistener.OnRespawnListener
 import org.firestorm.deathproRemake.eventlistener.SpawnMessageSuppressor
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
 import org.firestorm.deathproRemake.manager.GhostTaskManager
+import org.firestorm.deathproRemake.common.utils.UpdateChecker
 import org.firestorm.deathproRemake.service.CorpseService
 import org.firestorm.deathproRemake.service.GhostService
 import org.firestorm.deathproRemake.storage.config.DeathProConfig
@@ -42,6 +44,8 @@ class DeathproRemake : JavaPlugin() {
     lateinit var packetApi: PacketEventsAPI<*>
         private set
     lateinit var corpseService: CorpseService
+        private set
+    lateinit var updateChecker: UpdateChecker
         private set
 
     override fun onLoad() {
@@ -69,6 +73,10 @@ class DeathproRemake : JavaPlugin() {
         CommandRegistry.scan(this, DeathProCommand(this, corpseService))
         GhostKeys.init(this)
         CorpseKeys.init(this)
+
+        if (deathProConfig.updateCheckerConfig.enabled) {
+            checkUpdate()
+        }
 
         clogger.info("&aplugin started".color())
     }
@@ -113,5 +121,14 @@ class DeathproRemake : JavaPlugin() {
     fun registerService() {
         ghostService = GhostService(this)
         corpseService = CorpseService(this)
+    }
+
+    fun checkUpdate() {
+        updateChecker = UpdateChecker(
+            this,
+            BaseConstants.GITHUB_USER,
+            BaseConstants.GITHUB_REPO
+        )
+        updateChecker.check()
     }
 }

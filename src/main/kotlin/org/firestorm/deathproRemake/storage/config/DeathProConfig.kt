@@ -4,8 +4,9 @@ import org.firestorm.deathproRemake.DeathproRemake
 
 class DeathProConfig(private val plugin: DeathproRemake) {
 
-    lateinit var ghost:  GhostConfig  private set
+    lateinit var ghost: GhostConfig  private set
     lateinit var corpse: CorpseConfig private set
+    lateinit var updateCheckerConfig: UpdateCheckerConfig private set
 
     init { load() }
 
@@ -16,7 +17,8 @@ class DeathProConfig(private val plugin: DeathproRemake) {
 
     private fun load() {
         val cfg = plugin.config
-        ghost  = GhostConfig(cfg)
+        ghost = GhostConfig(cfg)
         corpse = CorpseConfig(cfg)
+        updateCheckerConfig = UpdateCheckerConfig(cfg)
     }
 }

@@ -1,3 +1,7 @@
+update-checker:
+  enabled: true
+  notify-ops: true
+
 ghost:
   duration: 10
   allow-chat: true
