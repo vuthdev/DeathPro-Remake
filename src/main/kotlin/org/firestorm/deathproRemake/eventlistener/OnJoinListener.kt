@@ -15,7 +15,11 @@ class OnJoinListener(private val p: DeathproRemake): BaseListener(p) {
 
         if (!player.isGhost()) return
 
-        p.corpseService.restoreCorpse(player)
-        p.ghostService.restoreGhostMode(player)
+        scheduler.runTaskLater(plugin, Runnable {
+            if (!player.isOnline) return@Runnable
+
+            p.corpseService.restoreCorpse(player)
+            p.ghostService.restoreGhostMode(player)
+        }, 10L)
     }
 }
