@@ -70,7 +70,6 @@ class DatabaseManager(private val plugin: DeathproRemake) {
                         rawJdbcConn.prepareStatement("ALTER TABLE corpses ADD COLUMN remaining_seconds BIGINT DEFAULT 0;").executeUpdate()
                         clogger.info("&aSuccessfully added missing column 'remaining_seconds'.".color())
                     } catch (e: Exception) {
-                        // Fallback fallback safe handler
                         clogger.warn("&6Error trying to add new column ${e.message}")
                     }
                 }
@@ -80,7 +79,6 @@ class DatabaseManager(private val plugin: DeathproRemake) {
                         rawJdbcConn.prepareStatement("ALTER TABLE corpses DROP COLUMN expired_at;").executeUpdate()
                         clogger.info("&aSuccessfully cleaned up legacy column 'expired_at'.".color())
                     } catch (e: Exception) {
-                        // Fallback fallback safe handler
                         clogger.warn("&6Error trying to clean up old column ${e.message}")
                     }
                 }
