@@ -7,6 +7,7 @@ import com.github.retrooper.packetevents.protocol.player.UserProfile
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
@@ -70,9 +71,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         )
 
         CorpseRepository.insert(corpse)
-        PdcCorpseRepository.save(player, countdownSeconds).let {
-            clogger.info("save corpse: $it")
-        }
+        PdcCorpseRepository.save(player, countdownSeconds)
 
         val task = startDestroyEntity(player, corpse)
         CorpseTaskManager.add(corpse.corpseId, taskId = task.taskId)
@@ -81,7 +80,6 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         for (onlinePlayers in Bukkit.getOnlinePlayers()) {
             sendPacketEntity(onlinePlayers, equipmentList, userProfile, corpse.corpseId, groundLocation)
         }
-        clogger.info("Finished creating corpse")
     }
 
     fun restoreCorpse(player: Player) {
@@ -93,7 +91,6 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                     CorpseTaskManager.cancel(corpse.corpseId)
                     CorpseRepository.delete(corpse.corpseId)
                     PdcCorpseRepository.clear(player)
-                    clogger.info("cancel and clear corpse")
                 }
                 else -> {
                     val userProfile = UserProfile(
@@ -103,8 +100,6 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                             TextureProperty("textures", corpse.skin.skinTexture, corpse.skin.skinSignature)
                         )
                     )
-
-                    clogger.info("restore corpse")
 
                     for (onlinePlayer in Bukkit.getOnlinePlayers()) {
                         sendPacketEntity(
@@ -128,11 +123,21 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
     }
 
     fun sendPacketEntity(viewerPlayer: Player, equipment: List<Equipment>, userProfile: UserProfile, entityId: Int, location: Location) {
-        val createPlayerInfo = CorpsePacketManager.createPlayerInfo(userProfile)
-        val spawnEntity = CorpsePacketManager.createSpawnPacket(userProfile, entityId, location)
-
         val pose = if (config.corpse.pose == "SWIMMING") EntityPose.SWIMMING else EntityPose.SLEEPING
         val createEntityMetadata = CorpsePacketManager.createEntityData(entityId, pose)
+        val createPlayerInfo = CorpsePacketManager.createPlayerInfo(userProfile)
+
+        val yOffset = when (pose) {
+            EntityPose.SWIMMING  -> -0.4
+            else                 -> 0.0
+        }
+
+        val locationForPose = location.clone().apply {
+            y += yOffset
+        }
+
+        val spawnEntity = CorpsePacketManager.createSpawnPacket(userProfile, entityId, locationForPose)
+
         val removePlayerInfo = CorpsePacketManager.removePlayerInfo(userProfile)
         val hideNPCName = CorpsePacketManager.hideNPCName(userProfile)
         val applyEquipment = CorpsePacketManager.createEntityEquipment(equipment, entityId)
@@ -147,7 +152,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         scheduler.runTaskLater(plugin, Runnable {
             playerManager.sendPacket(viewerPlayer, removePlayerInfo)
             playerManager.sendPacket(viewerPlayer, hideNPCName)
-        }, 20L)
+        }, 10L)
     }
 
     private fun startDestroyEntity(player: Player, state: CorpseState): BukkitTask {
@@ -159,7 +164,6 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             val currentPlayer = Bukkit.getPlayer(player.uniqueId)
 
             if (currentPlayer == null || !currentPlayer.isOnline) {
-                clogger.info("Player went offline. Cancelling countdown thread for corpse ID: ${state.corpseId}")
                 task.cancel()
                 return@Runnable
             }
@@ -168,9 +172,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                 for (onlinePlayers in Bukkit.getOnlinePlayers()) {
                     playerManager.sendPacket(onlinePlayers, destroyEntity)
                 }
-                CorpseRepository.delete(state.corpseId).let {
-                    clogger.info("delete corpse")
-                }
+                CorpseRepository.delete(state.corpseId)
                 CorpseTaskManager.remove(state.corpseId)
                 PdcCorpseRepository.clear(player)
                 task.cancel()
@@ -178,7 +180,6 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             }
 
             // save record in pdc
-            clogger.info("save corpse timer")
             PdcCorpseRepository.save(player, seconds)
 
             --seconds
