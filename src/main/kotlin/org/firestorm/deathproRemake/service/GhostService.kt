@@ -53,7 +53,6 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
                 PdcGhostRepository.clear(player)
                 applyGhostEffect(player, false)
                 player.teleportAsync(state.respawnLocation)
-                clogger.info("ghost mode expired")
             }
             else -> {
                 applyGhostEffect(player, true)
@@ -66,8 +65,6 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
                 val remaining = state.remainingSeconds.toInt()
                 val title = messageConfig.ghostTitle
                 val subTitle = messageConfig.ghostSubtitle(remaining)
-
-                clogger.info("ghost mode restored")
 
                 player.showTitle(
                     Title.title(
@@ -104,7 +101,6 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
                 Duration.ofSeconds(2)
             )
         )
-        clogger.info("exit ghost mode")
         player.showTitle(title)
     }
 
@@ -121,7 +117,6 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
 
             if (remaining <= 0) {
                 exitGhostMode(player.uniqueId)
-                clogger.info("ghost mode ${player.name} remaining $remaining")
                 return@Runnable
             }
 
@@ -137,7 +132,6 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
             player.showTitle(title)
             // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
 
-            clogger.info("ghost mode timer")
             // save current record
             val current = PdcGhostRepository.load(player)
             PdcGhostRepository.save(player, current.copy(remainingSeconds = remaining))
