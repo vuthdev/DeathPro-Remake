@@ -116,9 +116,11 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                         )
                     }
 
+                    val task = startDestroyEntity(player, corpse)
                     if (CorpseTaskManager.isActive(corpse.corpseId)) {
-                        val task = startDestroyEntity(player, corpse)
                         CorpseTaskManager.update(corpse.corpseId, taskId = task.taskId)
+                    } else {
+                        CorpseTaskManager.add(corpse.corpseId, taskId = task.taskId)
                     }
                 }
             }
@@ -154,7 +156,9 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         lateinit var task: BukkitTask
 
         task = scheduler.runTaskTimer(plugin, Runnable {
-            if (!player.isOnline) {
+            val currentPlayer = Bukkit.getPlayer(player.uniqueId)
+
+            if (currentPlayer == null || !currentPlayer.isOnline) {
                 clogger.info("Player went offline. Cancelling countdown thread for corpse ID: ${state.corpseId}")
                 task.cancel()
                 return@Runnable
@@ -164,10 +168,11 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                 for (onlinePlayers in Bukkit.getOnlinePlayers()) {
                     playerManager.sendPacket(onlinePlayers, destroyEntity)
                 }
-                CorpseRepository.delete(state.corpseId)
+                CorpseRepository.delete(state.corpseId).let {
+                    clogger.info("delete corpse")
+                }
                 CorpseTaskManager.remove(state.corpseId)
                 PdcCorpseRepository.clear(player)
-                clogger.info("delete corpse")
                 task.cancel()
                 return@Runnable
             }
