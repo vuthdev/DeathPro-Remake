@@ -70,7 +70,7 @@ class UpdateChecker(
                 "${plugin.messageConfig.rawPrefix()}&eUpdate available! &f$currentVersion &e→ &f$latestVersion".color()
             )
             player.sendMessage(
-                "${plugin.messageConfig.rawPrefix()}$7Download: &fhttps://github.com/$githubUser/$githubRepo/releases/latest".color()
+                "${plugin.messageConfig.rawPrefix()}&7Download: &fhttps://github.com/$githubUser/$githubRepo/releases/latest".color()
             )
         }, 40L)
     }
