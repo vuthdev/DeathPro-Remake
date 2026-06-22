@@ -67,7 +67,7 @@ class UpdateChecker(
 
         Bukkit.getScheduler().runTaskLater(plugin, Runnable {
             player.sendMessage(
-                "${plugin.messageConfig.rawPrefix()}&eUpdate available! &f$currentVersion &e→ &f$latestVersion".color()
+                "${plugin.messageConfig.rawPrefix()}&eUpdate available! &c$currentVersion &f→ &e$latestVersion".color()
             )
             player.sendMessage(
                 "${plugin.messageConfig.rawPrefix()}&7Download: &fhttps://github.com/$githubUser/$githubRepo/releases/latest".color()
