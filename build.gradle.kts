@@ -16,7 +16,10 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
 
-    implementation("com.github.retrooper:packetevents-spigot:2.13.0")
+    compileOnly("net.kyori:adventure-api:5.2.0")
+    compileOnly("net.kyori:adventure-text-minimessage:5.2.0")
+
+    implementation("com.github.retrooper:packetevents-spigot:2.14.0")
     implementation("org.jetbrains.exposed:exposed-core:1.3.0")
     implementation("org.jetbrains.exposed:exposed-jdbc:1.3.0")
     implementation("org.jetbrains.exposed:exposed-migration-jdbc:1.3.0")
@@ -29,7 +32,7 @@ dependencies {
     implementation(kotlin("reflect"))
 }
 
-version = "1.2.0"
+version = "1.2.1"
 
 kotlin {
     jvmToolchain(21)
