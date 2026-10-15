@@ -11,9 +11,9 @@ class OnChatListener(private val p: DeathproRemake): BaseListener(p) {
     @EventHandler
     fun onChat(e: AsyncChatEvent) {
         val player = e.player
-        if (!player.isGhost() && !config.ghost.allowChat) return
-
-        e.isCancelled = true
-        player.sendMessage(messageConfig.ghostCantInteract)
+        if (player.isGhost() && !config.ghost.allowChat) {
+            e.isCancelled = true
+            player.sendMessage(messageConfig.ghostCantInteract)
+        }
     }
 }

@@ -49,12 +49,9 @@ class DeathproRemake : JavaPlugin() {
         private set
 
     override fun onLoad() {
-        try {
-            PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this))
-            PacketEvents.getAPI().load()
-        } catch (e: Throwable) {
-            e.printStackTrace()
-        }
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this))
+        PacketEvents.getAPI().load()
+
         registerPacketListener()
     }
 

@@ -41,8 +41,16 @@ kotlin {
 tasks {
     shadowJar {
         archiveClassifier.set("")
-        relocate("com.github.retrooper", "org.firestorm.deathproRemake.libs.packetevents")
-        relocate("io.github.retrooper",  "org.firestorm.deathproRemake.libs.packetevents")
+        relocate(
+            "com.github.retrooper.packetevents",
+            "org.firestorm.deathproRemake.libs.packetevents.api"
+        )
+
+        relocate(
+            "io.github.retrooper.packetevents",
+            "org.firestorm.deathproRemake.libs.packetevents.impl"
+        )
+
         relocate("org.jetbrains.exposed.v1","org.firestorm.deathproRemake.libs.exposed")
         mergeServiceFiles()
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE

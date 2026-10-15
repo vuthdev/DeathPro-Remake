@@ -3,7 +3,9 @@ package org.firestorm.deathproRemake.storage.database
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
+import org.firestorm.deathproRemake.repository.PendingDeathInvRepository
 import org.firestorm.deathproRemake.storage.database.table.CorpseTable
+import org.firestorm.deathproRemake.storage.database.table.PendingDeathTable
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
@@ -33,6 +35,7 @@ class DatabaseManager(private val plugin: DeathproRemake) {
         ) {
             SchemaUtils.create(
                 CorpseTable,
+                PendingDeathTable
                 // add more tables here later
             )
 

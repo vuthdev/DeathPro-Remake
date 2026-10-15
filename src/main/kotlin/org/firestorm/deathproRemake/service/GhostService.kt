@@ -3,10 +3,12 @@ package org.firestorm.deathproRemake.service
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.GameRule
 import org.bukkit.Location
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
@@ -15,6 +17,7 @@ import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
 import org.firestorm.deathproRemake.repository.PdcGhostRepository
+import org.firestorm.deathproRemake.repository.PendingDeathInvRepository
 import java.time.Duration
 import java.util.UUID
 
@@ -88,6 +91,18 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
         // Cancel countdown task
         GhostTaskManager.cancel(uuid)
         PdcGhostRepository.clear(player)
+
+        val keepInventory = player.world.getGameRuleValue(GameRule.KEEP_INVENTORY)
+
+        if (keepInventory == true) {
+            val invBytes = PendingDeathInvRepository.loadPlayerInvAsByteArray(player.uniqueId)
+            val inv = invBytes?.let { ItemStack.deserializeItemsFromBytes(it) }
+            if (inv != null) {
+                player.inventory.contents = inv
+            }
+
+            PendingDeathInvRepository.removePlayerInv(player.uniqueId)
+        }
 
         applyGhostEffect(player, false)
 

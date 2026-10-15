@@ -6,6 +6,7 @@ import com.github.retrooper.packetevents.protocol.player.TextureProperty
 import com.github.retrooper.packetevents.protocol.player.UserProfile
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import org.bukkit.Bukkit
+import org.bukkit.GameRule
 import org.bukkit.Location
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
@@ -26,6 +27,7 @@ import org.firestorm.deathproRemake.model.PlayerEquipment
 import org.firestorm.deathproRemake.packets.CorpsePacketManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
 import org.firestorm.deathproRemake.repository.PdcCorpseRepository
+import org.firestorm.deathproRemake.repository.PendingDeathInvRepository
 import java.util.UUID
 
 class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
