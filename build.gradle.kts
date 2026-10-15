@@ -32,7 +32,7 @@ dependencies {
     implementation(kotlin("reflect"))
 }
 
-version = "1.2.1"
+version = project.property("version") as String
 
 kotlin {
     jvmToolchain(21)
