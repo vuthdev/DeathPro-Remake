@@ -15,6 +15,7 @@ object CorpseTable : Table("corpses") {
     val skinSignature = text("skin_signature").nullable()
     val remainingSeconds = long("remaining_seconds")
     val spawnedAt = long("spawnedAt")
+    val expiresAt = long("expires_at").nullable()
 
     // equipment store as string
     val equipmentJson = text("equipment_json").nullable()

@@ -35,14 +35,15 @@ object CorpseRepository {
             it[skinSignature] = state.skin.skinSignature
             it[remainingSeconds] = state.remainingSeconds
             it[spawnedAt] = state.spawnedAt
+            it[expiresAt] = state.expiresAt
 
             // convert to json
             it[equipmentJson] = EquipmentSerializer.toJson(state.equipment)
         }
     }
 
-    fun updateRemainingSeconds(corpseId: Int, player: Player, seconds: Long) = transaction {
-        CorpseTable.update( { (CorpseTable.corpseId eq corpseId) and (CorpseTable.playerUuid eq player.uniqueId) } ) {
+    fun updateRemainingSeconds(corpseId: Int, playerUuid: UUID, seconds: Long) = transaction {
+        CorpseTable.update( { (CorpseTable.corpseId eq corpseId) and (CorpseTable.playerUuid eq playerUuid) } ) {
             it[remainingSeconds] = seconds
         }
     }
@@ -89,7 +90,8 @@ object CorpseRepository {
             ),
             remainingSeconds = this[CorpseTable.remainingSeconds],
             spawnedAt = this[CorpseTable.spawnedAt],
-            equipment = EquipmentSerializer.fromJson(this[CorpseTable.equipmentJson])
+            equipment = EquipmentSerializer.fromJson(this[CorpseTable.equipmentJson]),
+            expiresAt = this[CorpseTable.expiresAt],
         )
     }
 }

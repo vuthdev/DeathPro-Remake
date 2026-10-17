@@ -10,7 +10,7 @@ import org.firestorm.deathproRemake.common.extension.isGhost
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
-import org.firestorm.deathproRemake.repository.PdcCorpseRepository
+import org.firestorm.deathproRemake.repository.GhostRepository
 
 class OnQuitListener(
     private val p: DeathproRemake,
@@ -20,24 +20,32 @@ class OnQuitListener(
     fun onQuit(e: PlayerQuitEvent) {
         val player = e.player
 
-        if (!player.isGhost()) return
-        GhostTaskManager.cancel(player.uniqueId)
-        val seconds = PdcCorpseRepository.load(player)
+        if (player.isGhost()) {
+            GhostTaskManager.cancel(player.uniqueId)
 
-        if (!plugin.isEnabled) {
-            saveCorpseData(player, seconds)
-        } else {
-            scheduler.runTaskAsynchronously(plugin, Runnable {
-                saveCorpseData(player, seconds)
-            })
+            if (!plugin.isEnabled) {
+                saveCorpseData(player)
+            } else {
+                scheduler.runTaskAsynchronously(plugin, Runnable {
+                    saveCorpseData(player)
+                })
+            }
         }
     }
 
-    private fun saveCorpseData(player: Player, seconds: Long) {
-        val playersCorpses = CorpseRepository.loadActive().filter { it.playerUuid == player.uniqueId }
+    private fun saveCorpseData(player: Player) {
+        val corpses = CorpseRepository.loadActive()
+            .filter { it.playerUuid == player.uniqueId }
 
-        playersCorpses.forEach {
-            CorpseRepository.updateRemainingSeconds(it.corpseId, player, seconds)
+        corpses.forEach { corpse ->
+            // cancel corpse on quit
+            CorpseTaskManager.cancel(corpse.corpseId)
+
+            CorpseRepository.updateRemainingSeconds(
+                corpse.corpseId,
+                corpse.playerUuid,
+                corpse.remainingSeconds
+            )
         }
     }
 }

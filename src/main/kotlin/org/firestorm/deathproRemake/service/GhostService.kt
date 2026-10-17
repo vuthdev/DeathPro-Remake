@@ -16,7 +16,7 @@ import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
-import org.firestorm.deathproRemake.repository.PdcGhostRepository
+import org.firestorm.deathproRemake.repository.GhostRepository
 import org.firestorm.deathproRemake.repository.PendingDeathInvRepository
 import java.time.Duration
 import java.util.UUID
@@ -32,38 +32,44 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
             deathLocation = deathLocation,
             respawnLocation = respawnLocation,
             remainingSeconds = countdownSeconds,
+            expiresAt = null
         )
         applyGhostEffect(player, true)
 //        player.teleportAsync(deathLocation.clone().add(0.0, 1.5, 0.0))
 
         val task = startCountdown(player, ghostState)
         GhostTaskManager.add(player.uniqueId, task.taskId)
-        PdcGhostRepository.save(player, ghostState)
+        GhostRepository.insert(ghostState)
     }
 
-    fun pauseGhostMode(player: Player, currentRemaining: Long) {
-        GhostTaskManager.cancel(player.uniqueId)
-
-        val state = PdcGhostRepository.load(player)
-        PdcGhostRepository.save(player, state.copy(remainingSeconds = currentRemaining))
-    }
+//    fun pauseGhostMode(player: Player, currentRemaining: Long) {
+//        GhostTaskManager.cancel(player.uniqueId)
+//
+//        val state = GhostRepository.get(player)
+//        GhostRepository.insert(state.copy(remainingSeconds = currentRemaining))
+//    }
 
     fun restoreGhostMode(player: Player) {
-        val state = PdcGhostRepository.load(player)
+        val state = GhostRepository.get(player) ?: return
+        val playerUuid = player.uniqueId
 
         when {
             state.isExpired -> {
-                PdcGhostRepository.clear(player)
-                applyGhostEffect(player, false)
+                GhostRepository.delete(playerUuid)
+                applyGhostEffect(player, isApply = false)
                 player.teleportAsync(state.respawnLocation)
             }
             else -> {
-                applyGhostEffect(player, true)
+                applyGhostEffect(player, isApply = true)
 
                 player.teleportAsync(state.deathLocation)
 
                 val task = startCountdown(player, state)
-                GhostTaskManager.update(player.uniqueId, task.taskId)
+                if (GhostTaskManager.isActive(playerUuid)) {
+                    GhostTaskManager.update(playerUuid, task.taskId)
+                } else {
+                    GhostTaskManager.add(playerUuid, task.taskId)
+                }
 
                 val remaining = state.remainingSeconds.toInt()
                 val title = messageConfig.ghostTitle
@@ -86,22 +92,23 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
 
     fun exitGhostMode(uuid: UUID) {
         val player = Bukkit.getPlayer(uuid) ?: return
-        val ghost = PdcGhostRepository.load(player)
+        val ghost = GhostRepository.get(player) ?: return
+        val playerUuid = player.uniqueId
 
         // Cancel countdown task
         GhostTaskManager.cancel(uuid)
-        PdcGhostRepository.clear(player)
+        GhostRepository.delete(playerUuid)
 
         val keepInventory = player.world.getGameRuleValue(GameRule.KEEP_INVENTORY)
 
         if (keepInventory == true) {
-            val invBytes = PendingDeathInvRepository.loadPlayerInvAsByteArray(player.uniqueId)
+            val invBytes = PendingDeathInvRepository.loadPlayerInvAsByteArray(playerUuid)
             val inv = invBytes?.let { ItemStack.deserializeItemsFromBytes(it) }
             if (inv != null) {
                 player.inventory.contents = inv
             }
 
-            PendingDeathInvRepository.removePlayerInv(player.uniqueId)
+            PendingDeathInvRepository.removePlayerInv(playerUuid)
         }
 
         applyGhostEffect(player, false)
@@ -148,8 +155,7 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
             // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
 
             // save current record
-            val current = PdcGhostRepository.load(player)
-            PdcGhostRepository.save(player, current.copy(remainingSeconds = remaining))
+            GhostRepository.updateRemainingSeconds(player.uniqueId, remaining)
 
             remaining--
         }, 0L, 20L)

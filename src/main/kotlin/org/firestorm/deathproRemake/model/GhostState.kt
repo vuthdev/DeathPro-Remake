@@ -10,6 +10,11 @@ data class GhostState(
     var respawnLocation: Location,
     var remainingSeconds: Long,
     var taskId: Int = -1,
+    var expiresAt: Long? = null,
 ) {
-    val isExpired get() = remainingSeconds <= 0
+    val currentRemainingSeconds: Long
+        get() = remainingSeconds
+
+    val isExpired: Boolean
+        get() = remainingSeconds <= 0L
 }

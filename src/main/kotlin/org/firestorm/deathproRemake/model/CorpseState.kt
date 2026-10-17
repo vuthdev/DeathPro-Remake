@@ -15,8 +15,21 @@ data class CorpseState(
     var spawnedAt: Long = System.currentTimeMillis(),
     var equipment: PlayerEquipment,
     var taskId: Int = -1,
+    val expiresAt: Long? = null
 ) {
 
+    val currentRemainingSeconds: Long
+        get() {
+            val deadline = expiresAt ?: return remainingSeconds
+            val millis = deadline - System.currentTimeMillis()
+
+            return if (millis <= 0L) 0L else (millis + 999L) / 1000L
+        }
+
     val isExpired: Boolean
-        get() = remainingSeconds <= 0
+        get() = if (expiresAt != null) {
+            System.currentTimeMillis() >= expiresAt
+        } else {
+            remainingSeconds <= 0L
+        }
 }

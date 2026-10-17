@@ -23,11 +23,15 @@ import org.firestorm.deathproRemake.eventlistener.SpawnMessageSuppressor
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.common.utils.UpdateChecker
+import org.firestorm.deathproRemake.repository.GhostCache
 import org.firestorm.deathproRemake.service.CorpseService
 import org.firestorm.deathproRemake.service.GhostService
 import org.firestorm.deathproRemake.storage.config.DeathProConfig
 import org.firestorm.deathproRemake.storage.config.MessageConfig
 import org.firestorm.deathproRemake.storage.database.DatabaseManager
+import org.firestorm.deathproRemake.storage.database.table.GhostTable
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 class DeathproRemake : JavaPlugin() {
     companion object {
@@ -77,6 +81,9 @@ class DeathproRemake : JavaPlugin() {
         if (deathProConfig.updateCheckerConfig.enabled) {
             checkUpdate()
         }
+
+        // load all ghost from db into cache
+        loadAllGhostsIntoCache()
 
         clogger.info("&aplugin started".color())
     }
@@ -130,5 +137,15 @@ class DeathproRemake : JavaPlugin() {
             BaseConstants.GITHUB_REPO
         )
         updateChecker.check()
+    }
+
+    fun loadAllGhostsIntoCache() {
+        val uuids = transaction {
+            GhostTable
+                .select(GhostTable.playerUuid)
+                .map { it[GhostTable.playerUuid] }
+        }
+
+        uuids.forEach(GhostCache::add)
     }
 }

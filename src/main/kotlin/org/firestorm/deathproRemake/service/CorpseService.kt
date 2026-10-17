@@ -14,20 +14,17 @@ import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
 import org.firestorm.deathproRemake.common.constants.DefaultSkins
-import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.fromPlayerEquipment
 import org.firestorm.deathproRemake.common.utils.IDGeneratorUtil
 import org.firestorm.deathproRemake.common.utils.LocationUtil
 import org.firestorm.deathproRemake.common.utils.UserProfileUtil
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
-import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.CorpseState
 import org.firestorm.deathproRemake.model.NpcSkinData
 import org.firestorm.deathproRemake.model.PlayerEquipment
 import org.firestorm.deathproRemake.packets.CorpsePacketManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
-import org.firestorm.deathproRemake.repository.PdcCorpseRepository
-import org.firestorm.deathproRemake.repository.PendingDeathInvRepository
+import java.time.Duration
 import java.util.UUID
 
 class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
@@ -70,10 +67,10 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             skin = skin,
             remainingSeconds = countdownSeconds,
             equipment = equipment,
+            expiresAt = null
         )
 
         CorpseRepository.insert(corpse)
-        PdcCorpseRepository.save(player, countdownSeconds)
 
         val task = startDestroyEntity(player, corpse)
         CorpseTaskManager.add(corpse.corpseId, taskId = task.taskId)
@@ -92,7 +89,6 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                 corpse.isExpired -> {
                     CorpseTaskManager.cancel(corpse.corpseId)
                     CorpseRepository.delete(corpse.corpseId)
-                    PdcCorpseRepository.clear(player)
                 }
                 else -> {
                     val userProfile = UserProfile(
@@ -158,8 +154,9 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
     }
 
     private fun startDestroyEntity(player: Player, state: CorpseState): BukkitTask {
-        val destroyEntity = CorpsePacketManager.destroyEntity(state.corpseId)
-        var seconds = state.remainingSeconds
+        val corpseId = state.corpseId
+        var remaining = state.remainingSeconds
+        val destroyEntity = CorpsePacketManager.destroyEntity(corpseId)
         lateinit var task: BukkitTask
 
         task = scheduler.runTaskTimer(plugin, Runnable {
@@ -170,21 +167,25 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
                 return@Runnable
             }
 
-            if (seconds <= 0) {
+            if (remaining <= 0L) {
                 for (onlinePlayers in Bukkit.getOnlinePlayers()) {
                     playerManager.sendPacket(onlinePlayers, destroyEntity)
                 }
-                CorpseRepository.delete(state.corpseId)
-                CorpseTaskManager.remove(state.corpseId)
-                PdcCorpseRepository.clear(player)
+                CorpseRepository.delete(corpseId)
+                CorpseTaskManager.remove(corpseId)
                 task.cancel()
                 return@Runnable
             }
 
             // save record in pdc
-            PdcCorpseRepository.save(player, seconds)
+            //PdcCorpseRepository.save(player, remaining)
+            CorpseRepository.updateRemainingSeconds(
+                corpseId,
+                state.playerUuid,
+                remaining
+            )
 
-            --seconds
+            --remaining
         }, 0L, 20L)
 
         return task

@@ -6,6 +6,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseListener
 import org.firestorm.deathproRemake.common.extension.isGhost
+import org.firestorm.deathproRemake.repository.GhostRepository
 
 class OnJoinListener(private val p: DeathproRemake): BaseListener(p) {
 
@@ -17,13 +18,13 @@ class OnJoinListener(private val p: DeathproRemake): BaseListener(p) {
             p.updateChecker.notifyPlayer(player)
         }
 
-        if (!player.isGhost()) return
+        if (player.isGhost()) {
+            scheduler.runTaskLater(plugin, Runnable {
+                if (!player.isOnline) return@Runnable
 
-        scheduler.runTaskLater(plugin, Runnable {
-            if (!player.isOnline) return@Runnable
-
-            p.corpseService.restoreCorpse(player)
-            p.ghostService.restoreGhostMode(player)
-        }, 10L)
+                p.corpseService.restoreCorpse(player)
+                p.ghostService.restoreGhostMode(player)
+            }, 10L)
+        }
     }
 }
