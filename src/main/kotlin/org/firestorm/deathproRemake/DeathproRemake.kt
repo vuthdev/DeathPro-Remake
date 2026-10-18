@@ -7,8 +7,6 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.firestorm.deathproRemake.annotations.handler.CommandRegistry
 import org.firestorm.deathproRemake.commands.DeathProCommand
 import org.firestorm.deathproRemake.common.constants.BaseConstants
-import org.firestorm.deathproRemake.common.constants.CorpseKeys
-import org.firestorm.deathproRemake.common.constants.GhostKeys
 import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.eventlistener.OnChatListener
@@ -75,8 +73,6 @@ class DeathproRemake : JavaPlugin() {
         registerService()
 
         CommandRegistry.scan(this, DeathProCommand(this, corpseService))
-        GhostKeys.init(this)
-        CorpseKeys.init(this)
 
         if (deathProConfig.updateCheckerConfig.enabled) {
             checkUpdate()
