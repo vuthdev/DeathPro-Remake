@@ -9,4 +9,6 @@ object BaseConstants {
 
     const val GITHUB_USER = "vuthdev"
     const val GITHUB_REPO = "DeathPro-Remake"
+
+    const val SAVE_INTERVAL_SECONDS = 30L
 }

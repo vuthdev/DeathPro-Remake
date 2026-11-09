@@ -48,6 +48,14 @@ object CorpseRepository {
         }
     }
 
+    fun updateRemainingSecondsBatch(rows: List<Triple<Int, UUID, Long>>) = transaction {
+        rows.forEach { (corpseId, playerUuid, seconds) ->
+            CorpseTable.update({ (CorpseTable.corpseId eq corpseId) and (CorpseTable.playerUuid eq playerUuid) }) {
+                it[remainingSeconds] = seconds
+            }
+        }
+    }
+
     fun delete(corpseId: Int) = transaction {
         CorpseTable.deleteWhere {
             CorpseTable.corpseId eq corpseId

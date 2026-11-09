@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.firestorm.deathproRemake.model.GhostState
+import org.firestorm.deathproRemake.storage.database.DbExecutor
 import org.firestorm.deathproRemake.storage.database.table.CorpseTable
 import org.firestorm.deathproRemake.storage.database.table.CorpseTable.remainingSeconds
 import org.firestorm.deathproRemake.storage.database.table.GhostTable
@@ -77,12 +78,13 @@ object GhostRepository {
         )
     }
 
-    fun delete(playerUuid: UUID) = transaction {
-        GhostTable.deleteWhere {
-            GhostTable.playerUuid eq playerUuid
-        }
-
+    fun delete(playerUuid: UUID) {
         GhostCache.remove(playerUuid)
+        DbExecutor.submit {
+            transaction {
+                GhostTable.deleteWhere { GhostTable.playerUuid eq playerUuid }
+            }
+        }
     }
 
     fun updateRemainingSeconds(playerUuid: UUID, seconds: Long) = transaction {
@@ -96,6 +98,14 @@ object GhostRepository {
             .select(GhostTable.playerUuid)
             .where { GhostTable.playerUuid eq playerUuid }
             .empty()
+    }
+
+    fun flushRemaining(snapshot: Map<UUID, Long>) = transaction {
+        snapshot.forEach { (uuid, secs) ->
+            GhostTable.update({ GhostTable.playerUuid eq uuid }) {
+                it[remainingSeconds] = secs
+            }
+        }
     }
 
 }

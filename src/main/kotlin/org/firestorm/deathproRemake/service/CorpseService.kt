@@ -13,6 +13,7 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
+import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.constants.DefaultSkins
 import org.firestorm.deathproRemake.common.extension.fromPlayerEquipment
 import org.firestorm.deathproRemake.common.utils.IDGeneratorUtil
@@ -24,6 +25,7 @@ import org.firestorm.deathproRemake.model.NpcSkinData
 import org.firestorm.deathproRemake.model.PlayerEquipment
 import org.firestorm.deathproRemake.packets.CorpsePacketManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
+import org.firestorm.deathproRemake.storage.database.DbExecutor
 import java.time.Duration
 import java.util.UUID
 
@@ -70,7 +72,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             expiresAt = null
         )
 
-        CorpseRepository.insert(corpse)
+        DbExecutor.submit { CorpseRepository.insert(corpse) }
 
         val task = startDestroyEntity(player, corpse)
         CorpseTaskManager.add(corpse.corpseId, taskId = task.taskId)
@@ -88,7 +90,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
             when {
                 corpse.isExpired -> {
                     CorpseTaskManager.cancel(corpse.corpseId)
-                    CorpseRepository.delete(corpse.corpseId)
+                    DbExecutor.submit { CorpseRepository.delete(corpse.corpseId) }
                 }
                 else -> {
                     val userProfile = UserProfile(
@@ -125,6 +127,13 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         val createEntityMetadata = CorpsePacketManager.createEntityData(entityId, pose)
         val createPlayerInfo = CorpsePacketManager.createPlayerInfo(userProfile)
 
+        val npcName = "npc_$entityId"
+        val npcProfile = UserProfile(
+            UUID.randomUUID(),              // fresh UUID per corpse so clients don't reuse a cached name
+            npcName,
+            userProfile.textureProperties   // keeps the skin
+        )
+
         val yOffset = when (pose) {
             EntityPose.SWIMMING  -> -0.4
             else                 -> 0.0
@@ -137,7 +146,7 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
         val spawnEntity = CorpsePacketManager.createSpawnPacket(userProfile, entityId, locationForPose)
 
         val removePlayerInfo = CorpsePacketManager.removePlayerInfo(userProfile)
-        val hideNPCName = CorpsePacketManager.hideNPCName(userProfile)
+        val hideNPCName = CorpsePacketManager.hideNPCName(npcName, npcName)
         val applyEquipment = CorpsePacketManager.createEntityEquipment(equipment, entityId)
 
         playerManager.sendPacket(viewerPlayer, createPlayerInfo)
@@ -155,21 +164,24 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
 
     private fun startDestroyEntity(player: Player, state: CorpseState): BukkitTask {
         val corpseId = state.corpseId
+        val ownerUuid = state.playerUuid
         var remaining = state.remainingSeconds
+        val removeTeam = CorpsePacketManager.removeNPCNameTeam("npc_$corpseId")
         val destroyEntity = CorpsePacketManager.destroyEntity(corpseId)
         lateinit var task: BukkitTask
 
         task = scheduler.runTaskTimer(plugin, Runnable {
-            val currentPlayer = Bukkit.getPlayer(player.uniqueId)
-
-            if (currentPlayer == null || !currentPlayer.isOnline) {
-                task.cancel()
-                return@Runnable
-            }
+//            val currentPlayer = Bukkit.getPlayer(ownerUuid)
+//
+//            if (currentPlayer == null || !currentPlayer.isOnline) {
+//                task.cancel()
+//                return@Runnable
+//            }
 
             if (remaining <= 0L) {
                 for (onlinePlayers in Bukkit.getOnlinePlayers()) {
                     playerManager.sendPacket(onlinePlayers, destroyEntity)
+                    playerManager.sendPacket(onlinePlayers, removeTeam)
                 }
                 CorpseRepository.delete(corpseId)
                 CorpseTaskManager.remove(corpseId)
@@ -179,11 +191,12 @@ class CorpseService(override val plugin: DeathproRemake): BaseService(plugin) {
 
             // save record in pdc
             //PdcCorpseRepository.save(player, remaining)
-            CorpseRepository.updateRemainingSeconds(
-                corpseId,
-                state.playerUuid,
-                remaining
-            )
+            if (remaining % BaseConstants.SAVE_INTERVAL_SECONDS == 0L) {
+                val snapshot = remaining
+                DbExecutor.submit {
+                    CorpseRepository.updateRemainingSeconds(corpseId, ownerUuid, snapshot)
+                }
+            }
 
             --remaining
         }, 0L, 20L)

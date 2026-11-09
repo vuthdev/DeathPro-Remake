@@ -8,9 +8,11 @@ import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseListener
 import org.firestorm.deathproRemake.common.extension.isGhost
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
+import org.firestorm.deathproRemake.manager.CountdownStore
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
 import org.firestorm.deathproRemake.repository.GhostRepository
+import org.firestorm.deathproRemake.storage.database.DbExecutor
 
 class OnQuitListener(
     private val p: DeathproRemake,
@@ -19,9 +21,12 @@ class OnQuitListener(
     @EventHandler
     fun onQuit(e: PlayerQuitEvent) {
         val player = e.player
+        val uuid = player.uniqueId
+        val live = CountdownStore.remove(uuid) ?: return
 
         if (player.isGhost()) {
             GhostTaskManager.cancel(player.uniqueId)
+            DbExecutor.submit { GhostRepository.updateRemainingSeconds(uuid, live) }
 
             if (!plugin.isEnabled) {
                 saveCorpseData(player)
@@ -34,17 +39,15 @@ class OnQuitListener(
     }
 
     private fun saveCorpseData(player: Player) {
-        val corpses = CorpseRepository.loadActive()
-            .filter { it.playerUuid == player.uniqueId }
+        val uuid = player.uniqueId
+        val corpses = CorpseRepository.loadActive()   // move this off-thread too if it's large
+            .filter { it.playerUuid == uuid }
 
-        corpses.forEach { corpse ->
-            // cancel corpse on quit
-            CorpseTaskManager.cancel(corpse.corpseId)
+        corpses.forEach { CorpseTaskManager.cancel(it.corpseId) }
 
-            CorpseRepository.updateRemainingSeconds(
-                corpse.corpseId,
-                corpse.playerUuid,
-                corpse.remainingSeconds
+        DbExecutor.submit {
+            CorpseRepository.updateRemainingSecondsBatch(
+                corpses.map { Triple(it.corpseId, it.playerUuid, it.remainingSeconds) }
             )
         }
     }
