@@ -12,12 +12,13 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
-import org.firestorm.deathproRemake.common.extension.clogger
+import org.firestorm.deathproRemake.common.constants.BaseConstants
 import org.firestorm.deathproRemake.common.extension.color
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
 import org.firestorm.deathproRemake.repository.GhostRepository
 import org.firestorm.deathproRemake.repository.PendingDeathInvRepository
+import org.firestorm.deathproRemake.storage.database.DbExecutor
 import java.time.Duration
 import java.util.UUID
 
@@ -50,43 +51,47 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
 //    }
 
     fun restoreGhostMode(player: Player) {
-        val state = GhostRepository.get(player) ?: return
         val playerUuid = player.uniqueId
 
-        when {
-            state.isExpired -> {
-                GhostRepository.delete(playerUuid)
-                applyGhostEffect(player, isApply = false)
-                player.teleportAsync(state.respawnLocation)
-            }
-            else -> {
-                applyGhostEffect(player, isApply = true)
+        DbExecutor.submit {
+            val state = GhostRepository.get(player) ?: return@submit
 
-                player.teleportAsync(state.deathLocation)
+            scheduler.runTask(plugin, Runnable {
+                if (!player.isOnline) return@Runnable
 
-                val task = startCountdown(player, state)
-                if (GhostTaskManager.isActive(playerUuid)) {
-                    GhostTaskManager.update(playerUuid, task.taskId)
+                if(state.isExpired) {
+                    GhostRepository.delete(playerUuid)
+                    applyGhostEffect(player, isApply = false)
+                    player.teleportAsync(state.respawnLocation)
                 } else {
-                    GhostTaskManager.add(playerUuid, task.taskId)
-                }
+                    applyGhostEffect(player, isApply = true)
 
-                val remaining = state.remainingSeconds.toInt()
-                val title = messageConfig.ghostTitle
-                val subTitle = messageConfig.ghostSubtitle(remaining)
+                    player.teleportAsync(state.deathLocation)
 
-                player.showTitle(
-                    Title.title(
-                        title,
-                        subTitle,
-                        Title.Times.times(
-                            Duration.ofSeconds(2),
-                            Duration.ofSeconds(5),
-                            Duration.ofSeconds(2)
+                    val task = startCountdown(player, state)
+                    if (GhostTaskManager.isActive(playerUuid)) {
+                        GhostTaskManager.update(playerUuid, task.taskId)
+                    } else {
+                        GhostTaskManager.add(playerUuid, task.taskId)
+                    }
+
+                    val remaining = state.remainingSeconds.toInt()
+                    val title = messageConfig.ghostTitle
+                    val subTitle = messageConfig.ghostSubtitle(remaining)
+
+                    player.showTitle(
+                        Title.title(
+                            title,
+                            subTitle,
+                            Title.Times.times(
+                                Duration.ofSeconds(2),
+                                Duration.ofSeconds(5),
+                                Duration.ofSeconds(2)
+                            )
                         )
                     )
-                )
-            }
+                }
+            })
         }
     }
 
@@ -102,10 +107,11 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
         val keepInventory = player.world.getGameRuleValue(GameRule.KEEP_INVENTORY)
 
         if (keepInventory == true) {
-            val invBytes = PendingDeathInvRepository.loadPlayerInvAsByteArray(playerUuid)
-            val inv = invBytes?.let { ItemStack.deserializeItemsFromBytes(it) }
-            if (inv != null) {
-                player.inventory.contents = inv
+            DbExecutor.submit {
+                val invBytes = PendingDeathInvRepository.loadPlayerInvAsByteArray(playerUuid)
+                scheduler.runTask(plugin, Runnable {
+                    invBytes?.let { player.inventory.contents = ItemStack.deserializeItemsFromBytes(it) }
+                })
             }
 
             PendingDeathInvRepository.removePlayerInv(playerUuid)
@@ -155,7 +161,10 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
             // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
 
             // save current record
-            GhostRepository.updateRemainingSeconds(player.uniqueId, remaining)
+            if (remaining % BaseConstants.SAVE_INTERVAL_SECONDS == 0L) {
+                val snapshot = remaining
+                DbExecutor.submit { GhostRepository.updateRemainingSeconds(player.uniqueId, snapshot) }
+            }
 
             remaining--
         }, 0L, 20L)

@@ -11,6 +11,7 @@ import org.firestorm.deathproRemake.manager.CorpseTaskManager
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
 import org.firestorm.deathproRemake.repository.GhostRepository
+import org.firestorm.deathproRemake.storage.database.DbExecutor
 
 class OnQuitListener(
     private val p: DeathproRemake,
@@ -34,17 +35,15 @@ class OnQuitListener(
     }
 
     private fun saveCorpseData(player: Player) {
-        val corpses = CorpseRepository.loadActive()
-            .filter { it.playerUuid == player.uniqueId }
+        val uuid = player.uniqueId
+        val corpses = CorpseRepository.loadActive()   // move this off-thread too if it's large
+            .filter { it.playerUuid == uuid }
 
-        corpses.forEach { corpse ->
-            // cancel corpse on quit
-            CorpseTaskManager.cancel(corpse.corpseId)
+        corpses.forEach { CorpseTaskManager.cancel(it.corpseId) }
 
-            CorpseRepository.updateRemainingSeconds(
-                corpse.corpseId,
-                corpse.playerUuid,
-                corpse.remainingSeconds
+        DbExecutor.submit {
+            CorpseRepository.updateRemainingSecondsBatch(
+                corpses.map { Triple(it.corpseId, it.playerUuid, it.remainingSeconds) }
             )
         }
     }

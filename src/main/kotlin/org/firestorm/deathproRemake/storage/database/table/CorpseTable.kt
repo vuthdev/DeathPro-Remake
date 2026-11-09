@@ -4,8 +4,8 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
 
 object CorpseTable : Table("corpses") {
-    val corpseId = integer("corpse_id")
-    val playerUuid = javaUUID("player_uuid")
+    val corpseId = integer("corpse_id").index()
+    val playerUuid = javaUUID("player_uuid").index()
     val playerName = varchar("player_name", 16)
     val world = varchar("world", 100)
     val x = double("x")

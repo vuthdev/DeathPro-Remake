@@ -3,6 +3,7 @@ package org.firestorm.deathproRemake
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.PacketEventsAPI
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
+import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import org.firestorm.deathproRemake.annotations.handler.CommandRegistry
 import org.firestorm.deathproRemake.commands.DeathProCommand
@@ -21,15 +22,19 @@ import org.firestorm.deathproRemake.eventlistener.SpawnMessageSuppressor
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.common.utils.UpdateChecker
+import org.firestorm.deathproRemake.manager.CountdownStore
 import org.firestorm.deathproRemake.repository.GhostCache
+import org.firestorm.deathproRemake.repository.GhostRepository
 import org.firestorm.deathproRemake.service.CorpseService
 import org.firestorm.deathproRemake.service.GhostService
 import org.firestorm.deathproRemake.storage.config.DeathProConfig
 import org.firestorm.deathproRemake.storage.config.MessageConfig
 import org.firestorm.deathproRemake.storage.database.DatabaseManager
+import org.firestorm.deathproRemake.storage.database.DbExecutor
 import org.firestorm.deathproRemake.storage.database.table.GhostTable
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.util.concurrent.TimeUnit
 
 class DeathproRemake : JavaPlugin() {
     companion object {
@@ -81,6 +86,13 @@ class DeathproRemake : JavaPlugin() {
         // load all ghost from db into cache
         loadAllGhostsIntoCache()
 
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, Runnable {
+            val snapshot = CountdownStore.snapshot()
+            if (snapshot.isNotEmpty()) {
+                DbExecutor.submit { GhostRepository.flushRemaining(snapshot) }
+            }
+        }, 600L, 600L)
+
         clogger.info("&aplugin started".color())
     }
 
@@ -92,6 +104,9 @@ class DeathproRemake : JavaPlugin() {
         GhostTaskManager.cancelAll()
 
         PacketEvents.getAPI().terminate()
+
+        DbExecutor.shutdown()
+        DbExecutor.awaitTermination(5, TimeUnit.SECONDS)
     }
 
     fun loadConfig() {

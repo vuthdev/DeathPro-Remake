@@ -4,7 +4,7 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
 
 object GhostTable: Table("ghosts") {
-    val playerUuid = javaUUID("player_uuid")
+    val playerUuid = javaUUID("player_uuid").index()
     val deathWorld = text("death_world")
     val deathX = double("death_x")
     val deathY = double("death_y")

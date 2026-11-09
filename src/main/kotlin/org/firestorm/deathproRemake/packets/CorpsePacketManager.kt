@@ -75,10 +75,7 @@ object CorpsePacketManager {
         return WrapperPlayServerEntityEquipment(entityId, equipmentList)
     }
 
-    fun hideNPCName(userProfile: UserProfile): PacketWrapper<*> {
-        val teamName = "${userProfile.name}-${userProfile.uuid}"
-        val npcName = userProfile.name
-
+    fun hideNPCName(teamName: String, npcName: String): PacketWrapper<*> {
         val teamInfo = WrapperPlayServerTeams.ScoreBoardTeamInfo(
             Component.text(teamName, NamedTextColor.WHITE),
             null,
@@ -89,14 +86,21 @@ object CorpsePacketManager {
             WrapperPlayServerTeams.OptionData.FRIENDLY_FIRE
         )
 
-        val createTeamPacket = WrapperPlayServerTeams(
+        return WrapperPlayServerTeams(
             teamName,
             WrapperPlayServerTeams.TeamMode.CREATE,
             teamInfo,
             npcName
         )
+    }
 
-        return createTeamPacket
+    fun removeNPCNameTeam(teamName: String): PacketWrapper<*> {
+        return WrapperPlayServerTeams(
+            teamName,
+            WrapperPlayServerTeams.TeamMode.REMOVE,
+            null as WrapperPlayServerTeams.ScoreBoardTeamInfo?,
+            emptyList<String>()
+        )
     }
 
     fun removePlayerInfo(userProfile: UserProfile): PacketWrapper<*> {
