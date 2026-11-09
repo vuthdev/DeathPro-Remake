@@ -103,6 +103,10 @@ class DeathproRemake : JavaPlugin() {
         CorpseTaskManager.cancelAll()
         GhostTaskManager.cancelAll()
 
+        CountdownStore.snapshot().takeIf { it.isNotEmpty() }?.let {
+            GhostRepository.flushRemaining(it)
+        }
+
         PacketEvents.getAPI().terminate()
 
         DbExecutor.shutdown()

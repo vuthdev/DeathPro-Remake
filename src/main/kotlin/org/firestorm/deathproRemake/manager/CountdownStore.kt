@@ -8,6 +8,6 @@ object CountdownStore {
 
     fun set(uuid: UUID, seconds: Long) { remaining[uuid] = seconds }
     fun get(uuid: UUID): Long? = remaining[uuid]
-    fun remove(uuid: UUID) { remaining.remove(uuid) }
+    fun remove(uuid: UUID): Long? = remaining.remove(uuid)
     fun snapshot(): Map<UUID, Long> = HashMap(remaining)
 }

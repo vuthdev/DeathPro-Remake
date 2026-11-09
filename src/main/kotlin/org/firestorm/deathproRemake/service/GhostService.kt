@@ -13,7 +13,9 @@ import org.bukkit.scheduler.BukkitTask
 import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseService
 import org.firestorm.deathproRemake.common.constants.BaseConstants
+import org.firestorm.deathproRemake.common.extension.clogger
 import org.firestorm.deathproRemake.common.extension.color
+import org.firestorm.deathproRemake.manager.CountdownStore
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.model.GhostState
 import org.firestorm.deathproRemake.repository.GhostRepository
@@ -57,6 +59,8 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
             val state = GhostRepository.get(player) ?: return@submit
 
             scheduler.runTask(plugin, Runnable {
+                clogger.info("$state")
+
                 if (!player.isOnline) return@Runnable
 
                 if(state.isExpired) {
@@ -139,12 +143,22 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
      */
 
     private fun startCountdown(player: Player, state: GhostState): BukkitTask {
+        val uuid = player.uniqueId
         var remaining = state.remainingSeconds
-        return scheduler.runTaskTimer(plugin, Runnable {
-            if (!player.isOnline) return@Runnable
+        lateinit var task: BukkitTask
+
+        CountdownStore.set(uuid, remaining)
+
+        task = scheduler.runTaskTimer(plugin, Runnable {
+            if (!player.isOnline) {
+                val live = CountdownStore.remove(uuid) ?: remaining
+                DbExecutor.submit { GhostRepository.updateRemainingSeconds(uuid, live) }
+                task.cancel()
+                return@Runnable
+            }
 
             if (remaining <= 0) {
-                exitGhostMode(player.uniqueId)
+                exitGhostMode(uuid)
                 return@Runnable
             }
 
@@ -160,14 +174,17 @@ class GhostService(override val plugin: DeathproRemake): BaseService(plugin) {
             player.showTitle(title)
             // player.sendActionBar(Component.text("§7Respawning in §f${remaining}s §7— Shift to respawn now"))
 
+            remaining--
+            CountdownStore.set(uuid, remaining)
+
             // save current record
             if (remaining % BaseConstants.SAVE_INTERVAL_SECONDS == 0L) {
                 val snapshot = remaining
-                DbExecutor.submit { GhostRepository.updateRemainingSeconds(player.uniqueId, snapshot) }
+                DbExecutor.submit { GhostRepository.updateRemainingSeconds(uuid, snapshot) }
             }
-
-            remaining--
         }, 0L, 20L)
+
+        return task
     }
 
     private fun applyGhostEffect(player: Player, isApply: Boolean) {

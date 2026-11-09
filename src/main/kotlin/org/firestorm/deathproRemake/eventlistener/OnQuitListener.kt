@@ -8,6 +8,7 @@ import org.firestorm.deathproRemake.DeathproRemake
 import org.firestorm.deathproRemake.base.BaseListener
 import org.firestorm.deathproRemake.common.extension.isGhost
 import org.firestorm.deathproRemake.manager.CorpseTaskManager
+import org.firestorm.deathproRemake.manager.CountdownStore
 import org.firestorm.deathproRemake.manager.GhostTaskManager
 import org.firestorm.deathproRemake.repository.CorpseRepository
 import org.firestorm.deathproRemake.repository.GhostRepository
@@ -20,9 +21,12 @@ class OnQuitListener(
     @EventHandler
     fun onQuit(e: PlayerQuitEvent) {
         val player = e.player
+        val uuid = player.uniqueId
+        val live = CountdownStore.remove(uuid) ?: return
 
         if (player.isGhost()) {
             GhostTaskManager.cancel(player.uniqueId)
+            DbExecutor.submit { GhostRepository.updateRemainingSeconds(uuid, live) }
 
             if (!plugin.isEnabled) {
                 saveCorpseData(player)
